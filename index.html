@@ -47,7 +47,7 @@ body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);min-height
 .ts{font-family:'IBM Plex Mono',monospace;font-size:10px}
 
 /* ── FILTER BAR ── */
-.fbar{background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.fbar{position:sticky;top:94px;z-index:190;background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;box-shadow:var(--s1)}
 .fg{display:flex;flex-direction:column;gap:2px}
 .fl{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
 .fsel{background:var(--line2);border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;font-size:11px;font-family:inherit;color:var(--ink);outline:none;cursor:pointer;transition:border-color .15s;min-width:88px}
@@ -63,9 +63,9 @@ body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);min-height
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
 .kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);padding:16px;position:relative;overflow:hidden;transition:box-shadow .2s}
 .kpi:hover{box-shadow:var(--s2)}
-.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);border-radius:var(--r2) var(--r2) 0 0}
-.kpi-l{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
-.kpi-v{font-size:22px;font-weight:600;color:var(--ink);font-family:'IBM Plex Mono',monospace;line-height:1}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue));border-radius:var(--r2) var(--r2) 0 0}
+.kpi-l{font-size:9px;font-weight:600;color:var(--kc,var(--ink3));text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;opacity:.85}
+.kpi-v{font-size:22px;font-weight:600;color:var(--kc,var(--ink));font-family:'IBM Plex Mono',monospace;line-height:1}
 .kpi-s{font-size:10px;color:var(--ink3);margin-top:4px}
 .kpi-b{display:inline-block;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:600;margin-top:5px}
 .ok{background:var(--green-lt);color:var(--green)}.ng{background:var(--red-lt);color:var(--red)}.warn{background:var(--amber-lt);color:var(--amber)}.info{background:var(--blue-lt);color:var(--blue)}
@@ -76,6 +76,7 @@ body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);min-height
 .card-h{padding:12px 16px 10px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between}
 .card-t{font-size:12px;font-weight:600;color:var(--ink)}
 .card-s{font-size:10px;color:var(--ink3);margin-top:1px}
+.click-hint{font-size:9px;color:var(--blue);opacity:.65;margin-left:6px}
 .card-b{padding:14px 16px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
@@ -712,8 +713,8 @@ function initRP(){
 }
 function fSel(id,vals,all,fmt2){
   const el=document.getElementById(id);if(!el)return;const cur=el.value;
-  el.innerHTML=`<option value="">— ${all} —</option>`+vals.map(v=>`<option>${fmt2?fmt2(v):v}</option>`).join('');
-  if([...el.options].some(o=>o.value===cur))el.value=cur;
+  el.innerHTML=`<option value="">— ${all} —</option>`+vals.map(v=>`<option value="${v}">${fmt2?fmt2(v):v}</option>`).join('');
+  if([...el.options].some(o=>o.value===String(cur)))el.value=String(cur);
 }
 function buildSelRP(){
   fSel('rp-fy',[...new Set(RP.all.map(r=>r.yr).filter(Boolean))].sort(),'ทุกปี');
@@ -766,14 +767,15 @@ function renderRPAll(){
 
   // KPIs
   const kDiv=mkEl('div','kpi-row');
+  const KCOLORS=['#2563EB','#EA580C','#7C3AED','#16A34A','#DC2626','#991B1B'];
   kDiv.innerHTML=[
-    {l:'มูลค่า Replan รวม',v:fB(tv)+' ฿',s:`avg ${fB(avg)} ฿/เดือน`,badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
-    {l:'จำนวน Job',v:f(d.length)+' งาน',s:`เฉลี่ย ${fB(tv/d.length||0)} ฿/งาน`},
-    {l:'Job ≥ 5,000 ฿',v:f(h5k.length)+' งาน',s:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
-    {l:'ยังไม่คุยที่ประชุม',v:f(ni.length)+' งาน',s:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'รอนำเข้าประชุม':'ครบ',bc:ni.length?'warn':'ok'},
-    {l:'เฉลี่ยต่อเดือน',v:fB(avg)+' ฿',s:`${mos.length} เดือน`},
-    {l:'ปัญหาหลัก',v:topP?topP[0]:'—',s:topP?`${fB(topP[1])} ฿`:'',badge:'#1',bc:'info'},
-  ].map(k=>`<div class="kpi"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
+    {l:'Total Value (THB)',v:fB(tv)+' THB',s:`Target: ${firstTgt?fB(firstTgt)+' THB':'—'}`,badge:pct!==null?(pct<=100?`✓ ${(100-pct).toFixed(1)}% ต่ำกว่าเป้า`:`⚠ ${(pct-100).toFixed(1)}% เกินเป้า`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
+    {l:'Target All (THB)',v:fB(firstTgt)+' THB',s:'เป้าหมายรวม'},
+    {l:'Baseline Avg (THB)',v:fB(avg)+' THB',s:'ค่าเฉลี่ย Baseline'},
+    {l:'Total Jobs',v:f(d.length),s:'จำนวนรายการทั้งหมด'},
+    {l:'Jobs > 5,000 THB',v:f(h5k.length),s:`มูลค่ารวม: ${fB(h5k.reduce((a,r)=>a+r.val,0))} THB`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
+    {l:'รายการใหม่ (Check=0)',v:f(ni.length),s:`มูลค่ารวม: ${fB(ni.reduce((a,r)=>a+r.val,0))} THB`,badge:ni.length?'รอนำเข้าประชุม':'ครบ',bc:ni.length?'ng':'ok'},
+  ].map((k,i)=>`<div class="kpi" style="--kc:${KCOLORS[i]}"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
   con.appendChild(kDiv);
 
   // Target Accordion
@@ -783,13 +785,13 @@ function renderRPAll(){
   sh(con,'Monthly Value & Machine');
   const r1=mkEl('div','g2');con.appendChild(r1);
   r1.appendChild(mkCd('📅 Monthly Value (฿)','','<div style="height:240px"><canvas id="rpMo"></canvas></div>'));
-  r1.appendChild(mkCd('🔧 Top Machines','ตามมูลค่า','<div style="height:240px"><canvas id="rpMC"></canvas></div>'));
+  r1.appendChild(mkCd('🔧 Top Machines','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpMC"></canvas></div>'));
 
   // Charts row 2: Dept + Factory
   sh(con,'รายแผนก / โรงงาน');
   const r2=mkEl('div','g2');con.appendChild(r2);
-  r2.appendChild(mkCd('🏢 มูลค่าตาม Department','','<div style="height:240px"><canvas id="rpDept"></canvas></div>'));
-  r2.appendChild(mkCd('🏭 มูลค่าตาม Factory','','<div style="height:240px"><canvas id="rpFac"></canvas></div>'));
+  r2.appendChild(mkCd('🏢 มูลค่าตาม Department','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpDept"></canvas></div>'));
+  r2.appendChild(mkCd('🏭 มูลค่าตาม Factory','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpFac"></canvas></div>'));
 
   // Pareto
   sh(con,'Pareto Analysis');
@@ -834,17 +836,32 @@ function buildRPCharts(d,mos){
   // Machine
   const mcG={};d.forEach(r=>{if(r.machine&&r.machine!=='OTHER')mcG[r.machine]=(mcG[r.machine]||0)+r.val;});
   const mcS=Object.entries(mcG).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  dc('rpMC');CHS['rpMC']=new Chart(document.getElementById('rpMC'),{type:'bar',data:{labels:mcS.map(x=>x[0]),datasets:[{data:mcS.map(x=>x[1]),backgroundColor:'#2563EB',borderRadius:3}]},options:hOpts()});
+  dc('rpMC');
+  const rpMCPlug = makeClickPlugin('rpMC', lbl => {
+    const el = document.getElementById('rp-fmc'); if(!el) return;
+    el.value = lbl || ''; rpF();
+  });
+  CHS['rpMC']=new Chart(document.getElementById('rpMC'),{type:'bar',data:{labels:mcS.map(x=>x[0]),datasets:[{data:mcS.map(x=>x[1]),backgroundColor:mcS.map(()=>'#2563EB'),_baseColor:'#2563EB',borderRadius:3}]},options:hOpts(rpMCPlug)});
 
   // Dept chart
   const dG={};d.forEach(r=>{if(r.dept&&r.dept!=='OTHER')dG[r.dept]=(dG[r.dept]||0)+r.val;});
   const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
-  dc('rpDept');CHS['rpDept']=new Chart(document.getElementById('rpDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:'#3B82F6',borderRadius:3}]},options:hOpts()});
+  dc('rpDept');
+  const rpDeptPlug = makeClickPlugin('rpDept', lbl => {
+    const el = document.getElementById('rp-fd'); if(!el) return;
+    el.value = lbl || ''; rpF();
+  });
+  CHS['rpDept']=new Chart(document.getElementById('rpDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:dS.map(()=>'#3B82F6'),_baseColor:'#3B82F6',borderRadius:3}]},options:hOpts(rpDeptPlug)});
 
   // Factory chart
   const fG={};d.forEach(r=>{if(r.fac&&r.fac!=='OTHER')fG[r.fac]=(fG[r.fac]||0)+r.val;});
   const fS=Object.entries(fG).sort((a,b)=>b[1]-a[1]);
-  dc('rpFac');CHS['rpFac']=new Chart(document.getElementById('rpFac'),{type:'bar',data:{labels:fS.map(x=>x[0]),datasets:[{data:fS.map(x=>x[1]),backgroundColor:'#60A5FA',borderRadius:3}]},options:hOpts()});
+  dc('rpFac');
+  const rpFacPlug = makeClickPlugin('rpFac', lbl => {
+    const el = document.getElementById('rp-ff'); if(!el) return;
+    el.value = lbl || ''; rpF();
+  });
+  CHS['rpFac']=new Chart(document.getElementById('rpFac'),{type:'bar',data:{labels:fS.map(x=>x[0]),datasets:[{data:fS.map(x=>x[1]),backgroundColor:fS.map(()=>'#60A5FA'),_baseColor:'#60A5FA',borderRadius:3}]},options:hOpts(rpFacPlug)});
 
   // Pareto
   buildPareto('rpP1','rp-pi1',Object.fromEntries(Object.entries(d.reduce((a,r)=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))a[r.problem]=(a[r.problem]||0)+r.val;return a;},{}))));
@@ -854,7 +871,13 @@ function buildRPCharts(d,mos){
   const pG={};d.forEach(r=>{if(r.compnt)pG[r.compnt]=(pG[r.compnt]||0)+r.val;});
   const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
   const pb=document.getElementById('rp-pb');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('rpProd');CHS['rpProd']=new Chart(document.getElementById('rpProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:'#1D4ED8',borderRadius:3}]},options:{...hOpts(),layout:{padding:{right:60}}}});
+  dc('rpProd');
+  const rpProdPlug = makeClickPlugin('rpProd', lbl => {
+    const si = document.getElementById('rp-si2'); if(!si) return;
+    if(lbl){ si.value = lbl.replace('…',''); } else { si.value=''; }
+    rpSrch();
+  });
+  CHS['rpProd']=new Chart(document.getElementById('rpProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map(()=>'#1D4ED8'),_baseColor:'#1D4ED8',borderRadius:3}]},options:{...hOpts(rpProdPlug),layout:{padding:{right:60}}}});
 }
 
 // ═══════════════════════════════════════
@@ -912,14 +935,15 @@ function renderAPAll(){
   const topD=Object.entries(dG).sort((a,b)=>b[1]-a[1])[0];
 
   const kDiv=mkEl('div','kpi-row');
+  const KCOLORS2=['#2563EB','#EA580C','#7C3AED','#16A34A','#DC2626','#991B1B'];
   kDiv.innerHTML=[
-    {l:'มูลค่า Add Paper รวม',v:fB(tv)+' ฿',s:`avg ${fB(avg)} ฿/เดือน`,badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
+    {l:'Total Value (THB)',v:fB(tv)+' THB',s:`avg ${fB(avg)} THB/เดือน`,badge:pct!==null?(pct<=100?`✓ ${(100-pct).toFixed(1)}% ต่ำกว่าเป้า`:`⚠ ${(pct-100).toFixed(1)}% เกินเป้า`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
+    {l:'Target All (THB)',v:fB(firstTgt)+' THB',s:'เป้าหมายรวม'},
     {l:'จำนวนแผ่นรวม',v:f(tSh)+' แผ่น',s:`avg ${f(d.length?Math.round(tSh/d.length):0)} แผ่น/job`},
-    {l:'จำนวน Job',v:f(d.length)+' งาน',s:`เฉลี่ย ${fB(tv/d.length||0)} ฿/งาน`},
-    {l:'Job ≥ 5,000 ฿',v:f(h5k.length)+' งาน',s:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
-    {l:'ยังไม่คุยที่ประชุม',v:f(ni.length)+' งาน',s:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'รอประชุม':'ครบ',bc:ni.length?'warn':'ok'},
-    {l:'แผนกสูงสุด',v:topD?topD[0]:'—',s:topD?`${fB(topD[1])} ฿`:'',badge:'#1',bc:'info'},
-  ].map(k=>`<div class="kpi"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
+    {l:'Total Jobs',v:f(d.length),s:`เฉลี่ย ${fB(tv/d.length||0)} THB/งาน`},
+    {l:'Jobs > 5,000 THB',v:f(h5k.length),s:`มูลค่ารวม: ${fB(h5k.reduce((a,r)=>a+r.val,0))} THB`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
+    {l:'รายการใหม่ (Check=0)',v:f(ni.length),s:`มูลค่ารวม: ${fB(ni.reduce((a,r)=>a+r.val,0))} THB`,badge:ni.length?'รอประชุม':'ครบ',bc:ni.length?'ng':'ok'},
+  ].map((k,i)=>`<div class="kpi" style="--kc:${KCOLORS2[i]}"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
   con.appendChild(kDiv);
 
   con.appendChild(buildTLAccordion('ap'));
@@ -967,7 +991,12 @@ function buildAPCharts(d){
 
   const dG={};d.forEach(r=>{if(r.dept)dG[r.dept]=(dG[r.dept]||0)+r.val;});
   const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
-  dc('apDept');CHS['apDept']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:'#7C3AED',borderRadius:3}]},options:hOpts()});
+  dc('apDept');
+  const apDeptPlug = makeClickPlugin('apDept', lbl => {
+    const el = document.getElementById('ap-fd'); if(!el) return;
+    el.value = lbl || ''; apF();
+  });
+  CHS['apDept']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:dS.map(()=>'#7C3AED'),_baseColor:'#7C3AED',borderRadius:3}]},options:hOpts(apDeptPlug)});
 
   const cG={};d.forEach(r=>{if(r.cause){const k=r.cause.toLowerCase().replace(/\s+/g,' ');cG[k]=(cG[k]||0)+r.val;}});
   buildPareto('apP1','ap-pi1',cG);
@@ -977,7 +1006,13 @@ function buildAPCharts(d){
   const pG={};d.forEach(r=>{if(r.code)pG[r.code]=(pG[r.code]||0)+r.val;});
   const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
   const pb=document.getElementById('ap-pb');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('apProd');CHS['apProd']=new Chart(document.getElementById('apProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:'#6D28D9',borderRadius:3}]},options:{...hOpts(),layout:{padding:{right:60}}}});
+  dc('apProd');
+  const apProdPlug = makeClickPlugin('apProd', lbl => {
+    const si = document.getElementById('ap-si2'); if(!si) return;
+    if(lbl){ si.value = lbl.replace('…',''); } else { si.value=''; }
+    apSrch();
+  });
+  CHS['apProd']=new Chart(document.getElementById('apProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map(()=>'#6D28D9'),_baseColor:'#6D28D9',borderRadius:3}]},options:{...hOpts(apProdPlug),layout:{padding:{right:60}}}});
 }
 
 // ═══════════════════════════════════════
@@ -1067,6 +1102,72 @@ function rebuildMoChart(k){
 }
 
 // ═══════════════════════════════════════
+// CHART CLICK FILTER STATE
+// ═══════════════════════════════════════
+const CHART_SEL = {}; // chartId -> selectedLabel or null
+
+function chartClick(chartId, label, filterFn) {
+  // toggle selection
+  if (CHART_SEL[chartId] === label) {
+    CHART_SEL[chartId] = null;
+    filterFn(null);
+  } else {
+    CHART_SEL[chartId] = label;
+    filterFn(label);
+  }
+}
+
+// Apply fade: selected bar full opacity, others 0.25
+function applyChartFade(chart, selectedIdx) {
+  const ds = chart.data.datasets[0];
+  const n = ds.data.length;
+  if (selectedIdx === null || selectedIdx === undefined) {
+    // reset all to full
+    ds.backgroundColor = Array(n).fill(ds._baseColor || ds.backgroundColor[0] || '#2563EB');
+  } else {
+    const base = ds._baseColor || ds.backgroundColor[0] || '#2563EB';
+    ds._baseColor = base;
+    ds.backgroundColor = ds.data.map((_, i) => i === selectedIdx ? base : hexFade(base, 0.22));
+  }
+  chart.update('none');
+}
+
+function hexFade(color, alpha) {
+  // Convert hex to rgba with alpha
+  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function makeClickPlugin(chartId, filterFn) {
+  return {
+    id: 'clickFilter_'+chartId,
+    afterEvent(chart, args) {
+      if (args.event.type !== 'click') return;
+      const pts = chart.getElementsAtEventForMode(args.event.native, 'nearest', {intersect:true}, true);
+      if (!pts.length) {
+        // click outside — reset
+        CHART_SEL[chartId] = null;
+        applyChartFade(chart, null);
+        filterFn(null);
+        return;
+      }
+      const idx = pts[0].index;
+      const label = chart.data.labels[idx];
+      const prev = CHART_SEL[chartId];
+      if (prev === label) {
+        CHART_SEL[chartId] = null;
+        applyChartFade(chart, null);
+        filterFn(null);
+      } else {
+        CHART_SEL[chartId] = label;
+        applyChartFade(chart, idx);
+        filterFn(label);
+      }
+    }
+  };
+}
+
+// ═══════════════════════════════════════
 // CHART HELPERS
 // ═══════════════════════════════════════
 function buildTDS(k,n){
@@ -1082,14 +1183,17 @@ function buildTDS(k,n){
 }
 function moOpts(){
   return{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{font:{size:9},boxWidth:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?` ${c.dataset.label}: ${fB(c.parsed.y)} ฿`:` ${fB(c.parsed.y)} ฿`}}},
+    plugins:{legend:{labels:{font:{size:9},boxWidth:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?` ${c.dataset.label}: ${fB(c.parsed.y)} THB`:` ${fB(c.parsed.y)} THB`}}},
     scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}}},
     animation:{onComplete(ctx){lblV(ctx.chart);}}};
 }
-function hOpts(){
+function hOpts(clickPlugin){
+  const plugins = {legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.parsed.x)} THB`}}};
+  if(clickPlugin) plugins[clickPlugin.id] = clickPlugin;
   return{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.parsed.x)} ฿`}}},
+    plugins,
     scales:{x:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:{size:10}},grid:{display:false}}},
+    onHover(e,els){e.native.target.style.cursor=els.length?'pointer':'default';},
     animation:{onComplete(ctx){lblH(ctx.chart);}}};
 }
 function lblV(ch){const c=ch.ctx;c.save();c.font='bold 8px IBM Plex Mono';c.textAlign='center';c.fillStyle='#555';ch.data.datasets[0]?.data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x,b.y-5);}});c.restore();}
@@ -1102,7 +1206,18 @@ function buildPareto(cid,iid,grp){
   const el=document.getElementById(iid);
   if(el){el.style.display='block';el.innerHTML=`${n80} รายการแรกคิดเป็น <strong>${Math.round(v80/tot*100)}%</strong> ของทั้งหมด${s[0]?` — "${s[0][0]}" สูงสุด <strong>${fB(s[0][1])}</strong>`:''}`;};
   dc(cid);
-  CHS[cid]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:s.map(([k])=>k.length>16?k.slice(0,15)+'…':k),datasets:[{label:'มูลค่า',data:s.map(([,v])=>v),backgroundColor:'#2563EB',borderRadius:3,yAxisID:'y'},{label:'%สะสม',data:cp,type:'line',borderColor:'#DC2626',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#DC2626',fill:false,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?` ${f(c.parsed.y)}`:` ${c.parsed.y}%`}}},scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},y:{position:'left',ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#DC2626'},grid:{display:false}}}}});
+  const parPlug = makeClickPlugin(cid, lbl => {
+    if(!lbl) return;
+    // detect which tab and filter accordingly
+    if(cid.startsWith('rp')) {
+      if(cid==='rpP1') { const e=document.getElementById('rp-fpb'); if(e){ e.value=lbl.replace('…',''); rpF(); } }
+      else if(cid==='rpP2') { const e=document.getElementById('rp-fmc'); if(e){ e.value=lbl.replace('…',''); rpF(); } }
+    } else {
+      const si=document.getElementById('ap-si2'); if(si){ si.value=lbl.replace('…',''); apSrch(); }
+    }
+    if(!lbl) { if(cid.startsWith('rp')){if(cid==='rpP1'){const e=document.getElementById('rp-fpb');if(e){e.value='';rpF();}}else{const e=document.getElementById('rp-fmc');if(e){e.value='';rpF();}}}else{const si=document.getElementById('ap-si2');if(si){si.value='';apSrch();}}}
+  });
+  CHS[cid]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:s.map(([k])=>k.length>16?k.slice(0,15)+'…':k),datasets:[{label:'มูลค่า',data:s.map(([,v])=>v),backgroundColor:s.map(()=>'#2563EB'),_baseColor:'#2563EB',borderRadius:3,yAxisID:'y'},{label:'%สะสม',data:cp,type:'line',borderColor:'#DC2626',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#DC2626',fill:false,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}},[parPlug.id]:parPlug,tooltip:{callbacks:{label:c=>c.datasetIndex===0?` ${f(c.parsed.y)} THB`:` ${c.parsed.y}%`}}},onHover(e,els){e.native.target.style.cursor=els.length?'pointer':'default';},scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},y:{position:'left',ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#DC2626'},grid:{display:false}}}}});
 }
 
 // ═══════════════════════════════════════
@@ -1161,9 +1276,10 @@ function apTbl(){
 // HELPERS
 // ═══════════════════════════════════════
 function mkEl(t,c){const e=document.createElement(t);e.className=c;return e;}
+let _shCount = {};
 function sh(con,title,sub,subId){
   const d=document.createElement('div');d.className='sec';
-  d.innerHTML=`<div><div class="sec-t">${title}</div>${sub?`<div class="sec-s"${subId?` id="${subId}"`:''} >${sub}</div>`:''}`;
+  d.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="sec-t">${title}</div>${sub?`<div class="sec-s"${subId?` id="${subId}"`:''} >${sub}</div>`:''}</div>`;
   con.appendChild(d);
 }
 function mkCd(title,sub,body){
