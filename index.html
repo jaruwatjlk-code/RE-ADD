@@ -1275,5 +1275,250 @@ function pgn(id,pg,pages,tot,cb){
   el.innerHTML=`<div class="pgi">${s.toLocaleString()}–${e.toLocaleString()} จาก ${tot.toLocaleString()}</div><div class="pgb-w"><button class="pgb" ${pg===0?'disabled':''} onclick="(${cb.toString()})(${pg-1})">‹ prev</button>${btns}<button class="pgb" ${pg===pages-1?'disabled':''} onclick="(${cb.toString()})(${pg+1})">ถัดไป ›</button></div>`;
 }
 </script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// FILTER FIX PATCH v2 — แก้ปัญหา chart click + filter propagate
+// ═══════════════════════════════════════════════════════════
+
+let activeMonth = null;  // highlight state เท่านั้น
+let activeDept  = null;
+
+// Override applyFilters — reset highlight เมื่อ dropdown เปลี่ยน
+const _origApplyFilters = applyFilters;
+applyFilters = function() {
+  const m = document.getElementById('fM').value;
+  activeMonth = m !== 'all' ? parseInt(m) : null;
+  activeDept  = null;
+  _origApplyFilters();
+};
+
+// Override buildMonthlyChart — highlight แทน filter
+function buildMonthlyChart(cv, coreData) {
+  const yr = document.getElementById('fY').value;
+  const mc = document.getElementById('fMc').value;
+  const da = selDepts.has('__all__') || selDepts.size === 0;
+
+  const src = (() => {
+    const base = allData.filter(r => {
+      if (isExcl(r)) return false;
+      if (yr !== 'all' && String(r.year) !== yr) return false;
+      if (mc !== 'all' && r.machine !== mc) return false;
+      if (!da && !selDepts.has(r.dept)) return false;
+      return true;
+    });
+    if (yr !== 'all') return base;
+    const years = [...new Set(base.map(r => r.year).filter(Boolean))].sort();
+    return years.length ? base.filter(r => r.year === Math.max(...years)) : base;
+  })();
+
+  const vals = Array.from({length:12}, (_,i) =>
+    src.filter(r => r.month === i+1).reduce((a,r) => a+r.val, 0)
+  );
+
+  const tA  = targetData['All']  || targetData['all']  || 0;
+  const tAv = targetData['Avg.'] || targetData['avg']  || 0;
+  const ref = tA || tAv || 0;
+
+  const bg = vals.map((v,i) => {
+    const isHL = activeMonth === null || (i+1) === activeMonth;
+    if (v === 0) return `rgba(42,48,69,${isHL?.5:.15})`;
+    return targetRatioColor(v, ref, isHL?.88:.2);
+  });
+
+  const ds = [{
+    label:'Value (THB)', data:vals, type:'bar',
+    backgroundColor: bg,
+    borderWidth: vals.map((_,i) => activeMonth!==null && (i+1)===activeMonth ? 2 : 0),
+    borderColor:'#fff', borderRadius:4, order:3
+  }];
+  if (tAv) ds.push({label:`Avg. ${fB(tAv)}`, data:Array(12).fill(tAv), type:'line', borderColor:'#f5a623', borderWidth:2, borderDash:[8,5], pointRadius:0, fill:false, order:1});
+  if (tA)  ds.push({label:`Target ${fB(tA)}`, data:Array(12).fill(tA), type:'line', borderColor:'#e74c3c', borderWidth:2.5, pointRadius:0, fill:false, order:0});
+
+  if (charts.monthly) { try{charts.monthly.destroy();}catch(e){} charts.monthly=null; }
+  charts.monthly = new Chart(cv, {
+    type:'bar', data:{labels:MN.slice(1), datasets:ds},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      onClick:(e,els) => {
+        if (!els.length || els[0].datasetIndex !== 0) return;
+        const m = els[0].index + 1;
+        if (activeMonth === m) {
+          activeMonth = null;
+          document.getElementById('fM').value = 'all';
+        } else {
+          activeMonth = m;
+          document.getElementById('fM').value = String(m);
+        }
+        _rebuildMonthlyColors();
+        _propagateChartFilter();
+      },
+      onHover:(e,els) => { cv.style.cursor = (els.length && els[0].datasetIndex===0)?'pointer':'default'; },
+      plugins:{
+        legend:{labels:{color:()=>cssVar('--text2'),font:{size:10},boxWidth:20}},
+        tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.parsed.y)+' THB'}}
+      },
+      scales:{
+        x:{grid:{color:()=>cssVar('--border')}, ticks:{color:()=>cssVar('--text2'),font:{size:10}}},
+        y:{grid:{color:()=>cssVar('--border')}, ticks:{color:()=>cssVar('--text2'),font:{size:10},callback:v=>fB(v)}}
+      },
+      animation:{onComplete(ctx){
+        const ch=ctx.chart,{ctx:c2}=ch;
+        c2.save(); c2.font='bold 9px IBM Plex Mono,monospace'; c2.textAlign='center';
+        ch.data.datasets[0].data.forEach((v,i)=>{
+          if(v>0){const mm=ch.getDatasetMeta(0);if(mm.data[i]){
+            const b=mm.data[i].getProps(['x','y'],true);
+            const isHL=activeMonth===null||(i+1)===activeMonth;
+            c2.fillStyle=isHL?cssVar('--text'):'rgba(128,130,140,.35)';
+            c2.fillText(fB(v),b.x,b.y-5);
+          }}
+        }); c2.restore();
+      }}
+    }
+  });
+  return charts.monthly;
+}
+
+// Override buildDeptChart — highlight แทน filter
+function buildDeptChart(cv) {
+  const y = document.getElementById('fY').value;
+  const m = document.getElementById('fM').value;
+  const base = allData.filter(r => {
+    if (y !== 'all' && String(r.year)  !== y) return false;
+    if (m !== 'all' && String(r.month) !== m) return false;
+    return true;
+  });
+  const DEPT_ORDER=['PR1','CON1','GL1','PR2','CON2','PDTN','OUTWORK','MAT','OTHER','CUTOUT','cutout'];
+  const allDeptsFull=[...new Set(allData.map(r=>r.dept).filter(Boolean))];
+  const depts=[...DEPT_ORDER.filter(d=>allDeptsFull.includes(d)),...allDeptsFull.filter(d=>!DEPT_ORDER.includes(d)).sort()];
+  const vals=depts.map(d=>base.filter(r=>r.dept===d).reduce((a,r)=>a+r.val,0));
+  const tgts=depts.map(d=>targetData[d]||0);
+  const da=selDepts.has('__all__')||selDepts.size===0;
+
+  const bgColors=vals.map((v,i)=>{
+    const isHL=da||selDepts.has(depts[i]);
+    if(v===0) return `rgba(42,48,69,${isHL?.5:.15})`;
+    return targetRatioColor(v,tgts[i]||0,isHL?.88:.22);
+  });
+  const tgtColors=depts.map(d=>(da||selDepts.has(d))?'rgba(245,166,35,.55)':'rgba(245,166,35,.15)');
+
+  if(charts.dept){try{charts.dept.destroy();}catch(e){}charts.dept=null;}
+  charts.dept=new Chart(cv,{
+    type:'bar',
+    data:{labels:depts,datasets:[
+      {label:'Actual',data:vals,backgroundColor:bgColors,borderRadius:3},
+      {label:'Target',data:tgts,backgroundColor:tgtColors,borderRadius:3}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      onClick:(e,els)=>{
+        if(!els.length||els[0].datasetIndex!==0) return;
+        const d=depts[els[0].index];
+        if(selDepts.has('__all__')){selDepts=new Set([d]);}
+        else if(selDepts.has(d)&&selDepts.size===1){selDepts=new Set(['__all__']);}
+        else if(selDepts.has(d)){selDepts.delete(d);}
+        else{selDepts.add(d);}
+        updateMSBtn(); renderMSItems();
+        _rebuildDeptColors(depts,tgts);
+        _propagateChartFilter();
+      },
+      onHover:(e,els)=>{cv.style.cursor=(els.length&&els[0].datasetIndex===0)?'pointer':'default';},
+      plugins:{
+        legend:{labels:{color:()=>cssVar('--text2'),font:{size:10},boxWidth:16}},
+        tooltip:{callbacks:{label:ctx=>' '+fB(ctx.parsed.y)+' THB'}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:()=>cssVar('--text2'),font:{size:10}}},
+        y:{grid:{color:()=>cssVar('--border')},ticks:{color:()=>cssVar('--text2'),font:{size:10},callback:v=>fB(v)}}
+      },
+      animation:{onComplete(ctx){
+        const ch=ctx.chart,{ctx:c2}=ch; c2.save();
+        c2.font='9px IBM Plex Mono,monospace'; c2.textAlign='center';
+        ch.data.datasets[0].data.forEach((v,i)=>{
+          if(v>0){const mm=ch.getDatasetMeta(0);if(mm.data[i]){
+            const b=mm.data[i].getProps(['x','y'],true);
+            const isHL=da||selDepts.has(depts[i]);
+            c2.fillStyle=isHL?cssVar('--text'):'rgba(128,130,140,.35)';
+            c2.fillText(fB(v),b.x,b.y-4);
+          }}
+        }); c2.restore();
+      }}
+    }
+  });
+  return charts.dept;
+}
+
+// Helper: rebuild monthly chart colors only (ไม่ destroy)
+function _rebuildMonthlyColors() {
+  const chart=charts.monthly; if(!chart) return;
+  const tA=targetData['All']||targetData['all']||0;
+  const tAv=targetData['Avg.']||targetData['avg']||0;
+  const ref=tA||tAv||0;
+  const vals=chart.data.datasets[0].data;
+  chart.data.datasets[0].backgroundColor=vals.map((v,i)=>{
+    const isHL=activeMonth===null||(i+1)===activeMonth;
+    if(v===0) return `rgba(42,48,69,${isHL?.5:.15})`;
+    return targetRatioColor(v,ref,isHL?.88:.2);
+  });
+  chart.data.datasets[0].borderWidth=vals.map((_,i)=>activeMonth!==null&&(i+1)===activeMonth?2:0);
+  chart.update('none');
+}
+
+// Helper: rebuild dept chart colors only (ไม่ destroy)
+function _rebuildDeptColors(depts, tgts) {
+  const chart=charts.dept; if(!chart) return;
+  const da=selDepts.has('__all__')||selDepts.size===0;
+  const vals=chart.data.datasets[0].data;
+  chart.data.datasets[0].backgroundColor=vals.map((v,i)=>{
+    const isHL=da||selDepts.has(depts[i]);
+    if(v===0) return `rgba(42,48,69,${isHL?.5:.15})`;
+    return targetRatioColor(v,tgts[i]||0,isHL?.88:.22);
+  });
+  chart.data.datasets[1].backgroundColor=depts.map(d=>(da||selDepts.has(d))?'rgba(245,166,35,.55)':'rgba(245,166,35,.15)');
+  chart.update('none');
+}
+
+// Helper: propagate filter → KPI + Gauge + Pareto + Product + Table
+function _propagateChartFilter() {
+  const y  = document.getElementById('fY').value;
+  const m  = document.getElementById('fM').value;
+  const mc = document.getElementById('fMc').value;
+  const da = selDepts.has('__all__') || selDepts.size === 0;
+
+  filteredData = allData.filter(r => {
+    if (y  !== 'all' && String(r.year)  !== y)  return false;
+    if (m  !== 'all' && String(r.month) !== m)  return false;
+    if (mc !== 'all' && r.machine       !== mc) return false;
+    if (!da && !selDepts.has(r.dept))           return false;
+    if (selComp !== null && (r.compnt||'') !== selComp) return false;
+    return true;
+  });
+
+  const coreData = filteredData.filter(r => !isExcl(r));
+
+  // KPI
+  const ks = document.getElementById('kpiRow');
+  if (ks) renderKPIs(ks, coreData, false);
+
+  // Gauge
+  const gCb = document.getElementById('cardGauge')?.querySelector('.cbody');
+  if (gCb) renderGauge(gCb, coreData);
+
+  // Pareto
+  const p1Cb = document.getElementById('cardPareto1')?.querySelector('.cbody');
+  const p2Cb = document.getElementById('cardPareto2')?.querySelector('.cbody');
+  if (p1Cb) renderPareto(p1Cb, filteredData, 'count');
+  if (p2Cb) renderPareto(p2Cb, filteredData, 'value');
+
+  // Product / Top10
+  const pCb = document.getElementById('cardProduct')?.querySelector('.cbody');
+  if (pCb) renderProduct(pCb, filteredData);
+
+  // Table + Search
+  refreshTbls(filteredData);
+  applySearch();
+  renderChips();
+  updateFbarBadge();
+}
+</script>
 </body>
 </html>
