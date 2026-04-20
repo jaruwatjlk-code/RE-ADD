@@ -3,232 +3,241 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Loss Dashboard — Replan & Add Paper</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Loss Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --blue:#1565C0;--blue-lt:#E3F2FD;--blue-mid:#42A5F5;
-  --purple:#6A1B9A;--purple-lt:#F3E5F5;
-  --red:#C62828;--red-lt:#FDECEA;
-  --orange:#E65100;--orange-lt:#FFF3E0;
-  --green:#2E7D32;--green-lt:#E8F5E9;
-  --teal:#00695C;
-  --gray-50:#FAFAFA;--gray-100:#F5F5F5;--gray-200:#EEEEEE;
-  --gray-300:#E0E0E0;--gray-600:#757575;--gray-800:#424242;--gray-900:#212121;
-  --s1:0 1px 3px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.07);
-  --s2:0 2px 8px rgba(0,0,0,.10),0 1px 3px rgba(0,0,0,.07);
-  --s3:0 4px 16px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.07);
-  --r8:8px;--r12:12px;--r16:16px;
+  --ink:#1A1A2E;--ink2:#4A4A68;--ink3:#9090A8;
+  --blue:#2563EB;--blue-lt:#EFF6FF;--blue-md:#BFDBFE;
+  --line:#E5E7EB;--line2:#F3F4F6;--bg:#F8FAFC;--white:#FFFFFF;
+  --red:#DC2626;--red-lt:#FEF2F2;
+  --green:#16A34A;--green-lt:#F0FDF4;
+  --amber:#D97706;--amber-lt:#FFFBEB;
+  --s1:0 1px 3px rgba(0,0,0,.08);--s2:0 4px 12px rgba(0,0,0,.08);--s3:0 8px 24px rgba(0,0,0,.10);
+  --r:8px;--r2:12px;--r3:16px;
 }
-html{font-size:14px}
-body{font-family:'IBM Plex Sans Thai',sans-serif;background:#F0F4F8;color:var(--gray-900);-webkit-font-smoothing:antialiased;min-height:100vh}
+html{font-size:14px;color:var(--ink)}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
 
-/* APP BAR */
-.app-bar{position:sticky;top:0;z-index:300;background:var(--blue);color:#fff;height:56px;padding:0 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.app-logo{font-size:22px;cursor:pointer;user-select:none;transition:transform .1s;border-radius:6px;padding:2px 4px}
-.app-logo:active{transform:scale(.88)}
-.app-logo.flash{animation:logoFlash .25s ease}
-@keyframes logoFlash{0%{background:rgba(255,255,255,.35)}100%{background:transparent}}
-.app-title{font-size:17px;font-weight:600;flex:1}
-.app-sub{font-size:10px;opacity:.75;font-weight:400}
-#appStatus{font-size:10px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;white-space:nowrap}
-.unlock-hint{font-size:10px;opacity:.55;display:none}
+/* ── APP BAR ── */
+.bar{position:sticky;top:0;z-index:300;background:var(--white);border-bottom:1px solid var(--line);height:52px;padding:0 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--s1)}
+.bar-logo{font-size:20px;cursor:pointer;user-select:none;padding:4px 6px;border-radius:6px;transition:background .1s}
+.bar-logo:active,.bar-logo.flash{background:var(--blue-lt)}
+.bar-title{font-size:15px;font-weight:600;flex:1;color:var(--ink)}
+.bar-sub{font-size:10px;font-weight:400;color:var(--ink3);margin-left:6px}
+.status-pill{font-size:10px;background:var(--line2);color:var(--ink2);padding:3px 10px;border-radius:20px;border:1px solid var(--line)}
+.status-pill.live{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-md)}
 
-/* TABS */
-.tabs{position:sticky;top:56px;z-index:200;background:#fff;border-bottom:1px solid var(--gray-200);display:flex;padding:0 20px;box-shadow:var(--s1)}
-.tab{padding:0 20px;height:44px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--gray-600);cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;user-select:none}
-.tab:hover{color:var(--blue);background:rgba(21,101,192,.04)}
+/* ── TABS ── */
+.tabs{position:sticky;top:52px;z-index:200;background:var(--white);border-bottom:1px solid var(--line);display:flex;padding:0 20px}
+.tab{height:42px;padding:0 18px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap}
+.tab:hover{color:var(--blue)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-#tab-cfg{display:none}
-#tab-cfg.unlocked{display:flex}
+#tab-cfg{display:none}#tab-cfg.on{display:flex}
 
-/* PAGES */
+/* ── PAGES ── */
 .page{display:none}.page.active{display:block}
 
-/* SETUP PANEL */
-.setup-wrap{max-width:680px;margin:32px auto;padding:0 20px}
-.setup-card{background:#fff;border-radius:var(--r16);border:1px solid var(--gray-200);box-shadow:var(--s2);overflow:hidden;margin-bottom:16px}
-.setup-hdr{background:linear-gradient(135deg,var(--blue),#1976D2);color:#fff;padding:20px 24px}
-.setup-hdr-title{font-size:16px;font-weight:600;margin-bottom:4px}
-.setup-hdr-sub{font-size:12px;opacity:.85}
-.setup-body{padding:20px 24px}
-.gs-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.gs-url-input{flex:1;padding:9px 13px;border:1.5px solid var(--gray-300);border-radius:var(--r8);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s;background:var(--gray-50)}
-.gs-url-input:focus{border-color:var(--blue);background:#fff}
-.btn-primary{background:var(--blue);color:#fff;border:none;padding:9px 20px;border-radius:var(--r8);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
-.btn-primary:hover{background:#1976D2;box-shadow:var(--s2)}
-.btn-secondary{background:#fff;color:var(--blue);border:1.5px solid var(--blue);padding:7px 16px;border-radius:var(--r8);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
-.btn-secondary:hover{background:var(--blue-lt)}
-.btn-ghost{background:none;border:1.5px solid var(--gray-300);color:var(--gray-600);padding:7px 12px;border-radius:var(--r8);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
-.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
-.btn-danger{background:none;border:1.5px solid var(--red);color:var(--red);padding:5px 10px;border-radius:var(--r8);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
-.btn-danger:hover{background:var(--red-lt)}
-.or-divider{text-align:center;margin:14px 0;font-size:11px;color:var(--gray-600);position:relative}
-.or-divider::before,.or-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--gray-200)}
-.or-divider::before{left:0}.or-divider::after{right:0}
-.upload-zone{border:2px dashed var(--gray-300);border-radius:var(--r12);padding:20px;text-align:center;cursor:pointer;transition:all .2s}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--blue);background:var(--blue-lt)}
-.upload-zone-title{font-size:13px;font-weight:600;color:var(--gray-800);margin-bottom:4px}
-.upload-zone-sub{font-size:11px;color:var(--gray-600);margin-bottom:12px}
-.hint-box{font-size:11px;color:var(--gray-600);line-height:1.7;background:var(--gray-50);padding:12px 14px;border-radius:var(--r8);margin-bottom:12px;border-left:3px solid var(--blue-mid)}
-.hint-box code{font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--gray-200);padding:1px 5px;border-radius:3px;color:var(--blue)}
-.code-block{background:#1E1E2E;color:#CDD6F4;border-radius:var(--r8);padding:14px;font-size:10px;font-family:'IBM Plex Mono',monospace;overflow:auto;max-height:220px;white-space:pre;line-height:1.6;margin:8px 0}
-.gs-status{font-size:11px;padding:4px 0}
-.gs-status.ok{color:var(--green)}.gs-status.err{color:var(--red)}.gs-status.loading{color:var(--blue)}
-.prog-wrap{margin:10px 0}
-.prog-track{height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-mid));border-radius:3px;transition:width .4s}
-.prog-label{font-size:10px;color:var(--gray-600);margin-top:4px;font-family:'IBM Plex Mono',monospace}
+/* ── REFRESH BAR ── */
+.rbar{background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink3)}
+.rbar .spacer{flex:1}
+.ts{font-family:'IBM Plex Mono',monospace;font-size:10px}
 
-/* FILTER BAR */
-.filter-bar{background:#fff;border-bottom:1px solid var(--gray-200);padding:10px 20px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;box-shadow:var(--s1)}
-.fg{display:flex;flex-direction:column;gap:3px}
-.fl{font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em}
-.fs{background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:var(--r8);padding:6px 10px;font-size:12px;font-family:inherit;color:var(--gray-900);cursor:pointer;outline:none;transition:border-color .15s;min-width:90px}
-.fs:focus{border-color:var(--blue)}
-.chip-bar{display:flex;gap:6px;flex-wrap:wrap;align-self:flex-end}
-.chip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-lt);color:var(--blue);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500}
-.chip-x{cursor:pointer;font-size:13px;opacity:.6}.chip-x:hover{opacity:1}
+/* ── FILTER BAR ── */
+.fbar{background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:2px}
+.fl{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.fsel{background:var(--line2);border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;font-size:11px;font-family:inherit;color:var(--ink);outline:none;cursor:pointer;transition:border-color .15s;min-width:88px}
+.fsel:focus{border-color:var(--blue);background:var(--white)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;align-self:flex-end}
+.chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-lt);color:var(--blue);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:500;border:1px solid var(--blue-md)}
+.chip-x{cursor:pointer;opacity:.5;font-size:12px;line-height:1}.chip-x:hover{opacity:1}
 
-/* CONTENT */
-.content{padding:20px;max-width:1440px;margin:0 auto}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:22px}
-.kpi{background:#fff;border-radius:var(--r12);padding:18px 18px 14px;border:1px solid var(--gray-200);box-shadow:var(--s1);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
-.kpi:hover{transform:translateY(-2px);box-shadow:var(--s3)}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue));border-radius:var(--r12) var(--r12) 0 0}
-.kpi-lbl{font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-.kpi-val{font-size:24px;font-weight:700;color:var(--kc,var(--blue));font-family:'IBM Plex Mono',monospace;line-height:1.1}
-.kpi-sub{font-size:11px;color:var(--gray-600);margin-top:4px}
-.kpi-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-top:6px}
-.b-pass{background:var(--green-lt);color:var(--green)}.b-fail{background:var(--red-lt);color:var(--red)}.b-warn{background:var(--orange-lt);color:var(--orange)}.b-info{background:var(--blue-lt);color:var(--blue)}
-.card{background:#fff;border-radius:var(--r12);border:1px solid var(--gray-200);box-shadow:var(--s1);overflow:hidden;margin-bottom:20px}
-.card:hover{box-shadow:var(--s2)}
-.card-hdr{padding:14px 18px 10px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.card-title{font-size:13px;font-weight:600}
-.card-sub{font-size:11px;color:var(--gray-600);margin-top:1px}
-.card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--gray-100);color:var(--gray-600)}
-.card-body{padding:14px 18px}
-.charts-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;margin-top:6px}
-.section-icon{width:32px;height:32px;border-radius:9px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.section-title{font-size:14px;font-weight:600}
-.section-sub{font-size:11px;color:var(--gray-600);margin-top:1px}
-.insight{background:linear-gradient(135deg,var(--blue-lt),rgba(2,136,209,.06));border-left:3px solid var(--blue);border-radius:0 var(--r8) var(--r8) 0;padding:9px 13px;margin-bottom:12px;font-size:12px;line-height:1.6}
-.insight strong{color:var(--blue)}
+/* ── CONTENT ── */
+.content{padding:18px 20px;max-width:1400px;margin:0 auto}
 
-/* ── TARGET LINE MANAGER ── */
-.tl-manager{background:#fff;border-radius:var(--r12);border:1px solid var(--gray-200);box-shadow:var(--s1);margin-bottom:20px;overflow:hidden}
-.tl-hdr{padding:12px 18px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none}
-.tl-hdr-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
-.tl-hdr-sub{font-size:11px;color:var(--gray-600)}
-.tl-toggle{font-size:12px;color:var(--gray-600);transition:transform .2s}
-.tl-body{padding:14px 18px;display:none}
-.tl-body.open{display:block}
-.tl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.tl-row{display:flex;align-items:center;gap:8px;background:var(--gray-50);border-radius:var(--r8);padding:8px 12px;flex-wrap:wrap}
-.tl-swatch{width:20px;height:20px;border-radius:4px;border:1px solid rgba(0,0,0,.1);flex-shrink:0;cursor:pointer}
-.tl-name-input{border:1.5px solid var(--gray-300);border-radius:6px;padding:5px 9px;font-size:12px;font-family:inherit;outline:none;width:110px;transition:border-color .15s;background:#fff}
-.tl-name-input:focus{border-color:var(--blue)}
-.tl-val-input{border:1.5px solid var(--gray-300);border-radius:6px;padding:5px 9px;font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;width:120px;transition:border-color .15s;background:#fff}
-.tl-val-input:focus{border-color:var(--blue)}
-.tl-color-input{width:34px;height:30px;border:none;background:none;padding:0;cursor:pointer;border-radius:4px;outline:none}
-.tl-sel{border:1.5px solid var(--gray-300);border-radius:6px;padding:5px 8px;font-size:11px;font-family:inherit;background:#fff;cursor:pointer;outline:none;color:var(--gray-900)}
+/* ── KPI ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);padding:16px;position:relative;overflow:hidden;transition:box-shadow .2s}
+.kpi:hover{box-shadow:var(--s2)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);border-radius:var(--r2) var(--r2) 0 0}
+.kpi-l{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.kpi-v{font-size:22px;font-weight:600;color:var(--ink);font-family:'IBM Plex Mono',monospace;line-height:1}
+.kpi-s{font-size:10px;color:var(--ink3);margin-top:4px}
+.kpi-b{display:inline-block;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:600;margin-top:5px}
+.ok{background:var(--green-lt);color:var(--green)}.ng{background:var(--red-lt);color:var(--red)}.warn{background:var(--amber-lt);color:var(--amber)}.info{background:var(--blue-lt);color:var(--blue)}
+
+/* ── CARD ── */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);margin-bottom:16px;overflow:hidden;transition:box-shadow .2s}
+.card:hover{box-shadow:var(--s1)}
+.card-h{padding:12px 16px 10px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between}
+.card-t{font-size:12px;font-weight:600;color:var(--ink)}
+.card-s{font-size:10px;color:var(--ink3);margin-top:1px}
+.card-b{padding:14px 16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ── ACCORDION (Target Manager) ── */
+.acc{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);margin-bottom:16px;overflow:hidden}
+.acc-hdr{padding:12px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:background .1s}
+.acc-hdr:hover{background:var(--line2)}
+.acc-hdr-t{font-size:12px;font-weight:600;color:var(--ink);flex:1}
+.acc-hdr-s{font-size:10px;color:var(--ink3)}
+.acc-arrow{font-size:10px;color:var(--ink3);transition:transform .2s}
+.acc-body{display:none;padding:14px 16px;border-top:1px solid var(--line2)}
+.acc-body.open{display:block}
+.acc-arrow.open{transform:rotate(180deg)}
+
+/* ── TARGET LINE ROWS ── */
+.tl-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.tl-row{display:flex;align-items:center;gap:8px;background:var(--line2);border-radius:var(--r);padding:8px 10px;flex-wrap:wrap}
+.tl-color{width:18px;height:18px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
+.ti{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;background:var(--white);transition:border-color .15s;color:var(--ink)}
+.ti:focus{border-color:var(--blue)}
+.ti-name{width:100px}.ti-val{width:115px;font-family:'IBM Plex Mono',monospace}
+.tl-sel{border:1px solid var(--line);border-radius:6px;padding:4px 7px;font-size:10px;font-family:inherit;background:var(--white);cursor:pointer;outline:none;color:var(--ink)}
 .tl-sel:focus{border-color:var(--blue)}
-.tl-label-badge{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--gray-600)}
-.add-line-btn{display:flex;align-items:center;gap:6px;background:var(--blue-lt);color:var(--blue);border:1.5px dashed var(--blue-mid);border-radius:var(--r8);padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;width:100%;justify-content:center;transition:all .15s;font-family:inherit}
-.add-line-btn:hover{background:#BBDEFB;border-style:solid}
+.tl-chk{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink2);cursor:pointer}
+input[type=color].tl-cp{width:28px;height:26px;border:1px solid var(--line);border-radius:4px;padding:1px;cursor:pointer;background:var(--white)}
+.add-tl{width:100%;padding:7px;border:1.5px dashed var(--blue-md);border-radius:var(--r);background:none;color:var(--blue);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.add-tl:hover{background:var(--blue-lt);border-style:solid}
 
-/* TABLE */
-.tbl-scroll{overflow-x:auto;max-height:420px;overflow-y:auto}
-.tbl-scroll::-webkit-scrollbar{width:5px;height:5px}.tbl-scroll::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{background:var(--gray-50);color:var(--gray-600);padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--gray-200);position:sticky;top:0;z-index:1;cursor:pointer;white-space:nowrap;user-select:none}
+/* ── TABLE ── */
+.tscroll{overflow-x:auto;max-height:400px;overflow-y:auto}
+.tscroll::-webkit-scrollbar{width:4px;height:4px}.tscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:var(--line2);color:var(--ink3);padding:8px 11px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;cursor:pointer;white-space:nowrap;user-select:none}
 thead th:hover{color:var(--blue)}
 thead th.sa::after{content:' ↑';color:var(--blue)}thead th.sd::after{content:' ↓';color:var(--blue)}
-tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s}
-tbody tr:hover{background:rgba(21,101,192,.04)}
-tbody tr.rh td{background:rgba(198,40,40,.03)}tbody tr.rn td{background:rgba(230,81,0,.03)}
-tbody td{padding:8px 12px;vertical-align:middle}
-.mono{font-family:'IBM Plex Mono',monospace;font-size:11px}
-.tr-right{text-align:right}
-.tag{display:inline-block;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:700;margin-left:4px}
-.tag-h{background:var(--red-lt);color:var(--red)}.tag-n{background:var(--orange-lt);color:var(--orange)}.tag-ok{background:var(--green-lt);color:var(--green)}
-tfoot td{background:var(--gray-50);font-weight:600;padding:9px 12px;border-top:2px solid var(--gray-200)}
-.search-bar{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--gray-100)}
-.search-input{flex:1;background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--r8);padding:7px 12px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
-.search-input:focus{border-color:var(--blue);background:#fff}
-.search-ct{font-size:11px;color:var(--gray-600);white-space:nowrap}
-.pg{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--gray-100);flex-wrap:wrap;gap:8px}
-.pg-info{font-size:11px;color:var(--gray-600)}
-.pg-btns{display:flex;gap:3px;flex-wrap:wrap}
-.pb{background:#fff;border:1.5px solid var(--gray-200);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--gray-600);font-family:inherit;transition:all .12s;min-width:30px;text-align:center}
-.pb:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.pb.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}.pb:disabled{opacity:.35;cursor:not-allowed}
-.empty{padding:60px 24px;text-align:center;color:var(--gray-600)}
-.empty-ico{font-size:48px;margin-bottom:14px;opacity:.4}.empty-t{font-size:16px;font-weight:600;margin-bottom:6px}.empty-s{font-size:12px}
-.refresh-bar{background:#fff;border-bottom:1px solid var(--gray-200);padding:8px 20px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--gray-600)}
-.last-update{font-size:11px;color:var(--gray-600);margin-left:auto;font-family:'IBM Plex Mono',monospace}
+tbody tr{border-bottom:1px solid var(--line2);transition:background .1s}
+tbody tr:hover{background:var(--blue-lt)}
+tbody tr.rhi td{background:rgba(220,38,38,.03)}tbody tr.rno td{background:rgba(217,119,6,.03)}
+td{padding:7px 11px;vertical-align:middle}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:10px}
+.tar{text-align:right}
+.tag{display:inline-block;padding:1px 5px;border-radius:20px;font-size:8px;font-weight:700;margin-left:3px}
+.tag-h{background:var(--red-lt);color:var(--red)}.tag-n{background:var(--amber-lt);color:var(--amber)}.tag-ok{background:var(--green-lt);color:var(--green)}
+tfoot td{background:var(--line2);font-weight:600;padding:8px 11px;border-top:1px solid var(--line)}
 
-/* LOCK OVERLAY */
-.lock-overlay{position:fixed;inset:0;z-index:999;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.lock-box{background:#fff;border-radius:20px;padding:36px 40px;text-align:center;min-width:300px;box-shadow:var(--s3)}
-.lock-dots{display:flex;gap:10px;justify-content:center;margin:20px 0}
-.lock-dot{width:14px;height:14px;border-radius:50%;background:var(--gray-200);transition:background .2s,transform .15s}
-.lock-dot.filled{background:var(--blue);transform:scale(1.2)}
-.lock-dot.error{background:var(--red);animation:shake .3s ease}
-@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}100%{transform:translateX(0)}}
-.lock-title{font-size:15px;font-weight:600;margin-bottom:6px}
-.lock-sub{font-size:12px;color:var(--gray-600)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,56px);gap:8px;justify-content:center;margin:16px 0}
-.pin-btn{width:56px;height:56px;border-radius:50%;border:1.5px solid var(--gray-200);background:#fff;font-size:18px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray-900);transition:all .12s}
+/* ── SEARCH & PAGINATION ── */
+.sbar{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--line2)}
+.si{flex:1;background:var(--line2);border:1px solid transparent;border-radius:var(--r);padding:6px 11px;font-size:11px;font-family:inherit;outline:none;transition:all .15s}
+.si:focus{border-color:var(--blue);background:var(--white)}
+.sct{font-size:10px;color:var(--ink3);white-space:nowrap}
+.pgn{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--line2);flex-wrap:wrap;gap:6px}
+.pgi{font-size:10px;color:var(--ink3)}
+.pgb-wrap{display:flex;gap:2px}
+.pgb{background:var(--white);border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;color:var(--ink3);font-family:inherit;transition:all .1s;min-width:26px;text-align:center}
+.pgb:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.pgb.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}.pgb:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── SETUP ── */
+.setup-wrap{max-width:640px;margin:28px auto;padding:0 20px}
+.setup-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;margin-bottom:14px;box-shadow:var(--s1)}
+.setup-head{background:var(--blue);color:#fff;padding:18px 22px}
+.setup-head-t{font-size:14px;font-weight:600;margin-bottom:2px}
+.setup-head-s{font-size:11px;opacity:.8}
+.setup-body{padding:18px 22px}
+.gs-row{display:flex;gap:7px;align-items:center;margin-bottom:10px}
+.gs-in{flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r);font-size:12px;font-family:inherit;outline:none;transition:border-color .15s;background:var(--line2)}
+.gs-in:focus{border-color:var(--blue);background:var(--white)}
+.hint{font-size:10px;color:var(--ink3);line-height:1.7;background:var(--line2);padding:10px 12px;border-radius:var(--r);margin-bottom:10px;border-left:2px solid var(--blue-md)}
+.hint code{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--white);padding:1px 4px;border-radius:3px;color:var(--blue);border:1px solid var(--line)}
+.code-block{background:#0F172A;color:#CBD5E1;border-radius:var(--r);padding:12px;font-size:9.5px;font-family:'IBM Plex Mono',monospace;overflow:auto;max-height:200px;white-space:pre;line-height:1.6;margin:7px 0}
+.prog-wrap{margin:8px 0}
+.prog-track{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
+.prog-lbl{font-size:9px;color:var(--ink3);margin-top:3px;font-family:'IBM Plex Mono',monospace}
+.gs-st{font-size:10px;padding:3px 0}.gs-st.ok{color:var(--green)}.gs-st.err{color:var(--red)}.gs-st.ld{color:var(--blue)}
+.upload-zone{border:1.5px dashed var(--line);border-radius:var(--r2);padding:18px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.dz{border-color:var(--blue);background:var(--blue-lt)}
+.upload-t{font-size:12px;font-weight:500;margin-bottom:3px}.upload-s{font-size:10px;color:var(--ink3);margin-bottom:10px}
+.or-div{text-align:center;margin:12px 0;font-size:10px;color:var(--ink3);position:relative}
+.or-div::before,.or-div::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--line)}
+.or-div::before{left:0}.or-div::after{right:0}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:var(--r);padding:7px 14px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:#1D4ED8}
+.btn-outline{background:var(--white);color:var(--blue);border:1px solid var(--blue)}.btn-outline:hover{background:var(--blue-lt)}
+.btn-ghost{background:none;color:var(--ink2);border:1px solid var(--line)}.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-danger{background:none;color:var(--red);border:1px solid var(--red)}.btn-danger:hover{background:var(--red-lt)}
+.btn-sm{padding:4px 10px;font-size:10px}
+
+/* ── LOCK ── */
+.lock-overlay{position:fixed;inset:0;z-index:999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.lock-box{background:var(--white);border-radius:20px;padding:32px 36px;text-align:center;min-width:280px;box-shadow:var(--s3)}
+.lock-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.lock-sub{font-size:11px;color:var(--ink3);margin-bottom:16px}
+.lock-dots{display:flex;gap:8px;justify-content:center;margin:14px 0}
+.ld{width:12px;height:12px;border-radius:50%;background:var(--line);transition:all .15s}
+.ld.on{background:var(--blue)}
+.ld.err{background:var(--red);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,52px);gap:7px;justify-content:center;margin:12px 0}
+.pin-btn{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--white);font-size:16px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--ink);transition:all .12s}
 .pin-btn:hover{background:var(--blue-lt);border-color:var(--blue);color:var(--blue)}
-.pin-btn:active{transform:scale(.92)}
+.pin-btn:active{transform:scale(.9)}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.kpi{animation:fadeUp .3s ease both}
-.kpi:nth-child(1){animation-delay:.02s}.kpi:nth-child(2){animation-delay:.05s}.kpi:nth-child(3){animation-delay:.08s}.kpi:nth-child(4){animation-delay:.11s}.kpi:nth-child(5){animation-delay:.14s}.kpi:nth-child(6){animation-delay:.17s}
-@media(max-width:900px){.charts-2{grid-template-columns:1fr}.content{padding:14px}}
-@media(max-width:500px){.kpi-grid{grid-template-columns:1fr 1fr}.content{padding:10px}.tl-row{flex-wrap:wrap}}
+/* ── SECTION HEADER ── */
+.sec{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:4px}
+.sec-t{font-size:13px;font-weight:600}
+.sec-s{font-size:10px;color:var(--ink3);margin-top:1px}
+
+/* ── INSIGHT ── */
+.insight{background:var(--blue-lt);border-left:2px solid var(--blue);border-radius:0 var(--r) var(--r) 0;padding:8px 12px;margin-bottom:10px;font-size:11px;line-height:1.6;color:var(--ink2)}
+
+/* ── EMPTY ── */
+.empty{padding:56px 20px;text-align:center;color:var(--ink3)}
+.empty-ico{font-size:40px;margin-bottom:12px;opacity:.35}
+.empty-t{font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:4px}
+.empty-s{font-size:11px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeUp .25s ease both}
+.kpi:nth-child(1){animation-delay:.02s}.kpi:nth-child(2){animation-delay:.04s}.kpi:nth-child(3){animation-delay:.06s}
+.kpi:nth-child(4){animation-delay:.08s}.kpi:nth-child(5){animation-delay:.10s}.kpi:nth-child(6){animation-delay:.12s}
+@media(max-width:880px){.g2,.g3{grid-template-columns:1fr}.content{padding:12px 14px}}
+@media(max-width:480px){.kpi-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<header class="app-bar">
-  <span class="app-logo" id="appLogo" onclick="logoClick()">📊</span>
-  <div style="flex:1;min-width:0">
-    <div class="app-title">Loss Dashboard <span class="app-sub">Replan & Add Paper</span></div>
-  </div>
-  <div id="appStatus">ยังไม่มีข้อมูล</div>
+<header class="bar">
+  <span class="bar-logo" id="logo" onclick="logoClick()">📊</span>
+  <div class="bar-title">Loss Dashboard<span class="bar-sub">Replan & Add Paper</span></div>
+  <div id="appStatus" class="status-pill">ยังไม่มีข้อมูล</div>
 </header>
 
 <nav class="tabs">
-  <div class="tab active" id="tab-rp" onclick="switchTab('rp')">🔄 Replan Loss</div>
-  <div class="tab" id="tab-ap" onclick="switchTab('ap')">📄 Add Paper</div>
-  <div class="tab" id="tab-cfg" onclick="switchTab('cfg')">⚙️ ตั้งค่า</div>
+  <div class="tab active" id="tab-rp" onclick="sw('rp')">🔄 Replan</div>
+  <div class="tab" id="tab-ap" onclick="sw('ap')">📄 Add Paper</div>
+  <div class="tab" id="tab-cfg" onclick="sw('cfg')">⚙️ ตั้งค่า</div>
 </nav>
 
 <!-- ══ REPLAN ══ -->
 <div class="page active" id="page-rp">
-  <div id="rp-nodata"><div class="setup-wrap" id="rp-setup-nodata"></div></div>
-  <div id="rp-setup" style="display:none"><div class="setup-wrap" id="rp-setup-inner"></div></div>
-  <div id="rp-data" style="display:none">
-    <div class="refresh-bar">
-      <button class="btn-primary" style="padding:6px 14px;font-size:12px" onclick="refreshRP()">🔄 Refresh</button>
-      <span id="rp-src-label"></span>
-      <span class="last-update" id="rp-last-update"></span>
-      <button class="btn-ghost" style="font-size:11px;padding:5px 10px" id="rp-change-src" onclick="showSetup('rp')" style="display:none">📂 เปลี่ยนแหล่งข้อมูล</button>
+  <div id="rp-nodata"><div class="setup-wrap" id="rp-nd"></div></div>
+  <div id="rp-setup" style="display:none"><div class="setup-wrap" id="rp-si"></div></div>
+  <div id="rp-live" style="display:none">
+    <div class="rbar">
+      <button class="btn btn-blue btn-sm" onclick="refreshRP()">↺ Refresh</button>
+      <span id="rp-src"></span>
+      <span class="spacer"></span>
+      <span class="ts" id="rp-ts"></span>
+      <button class="btn btn-ghost btn-sm" id="rp-chg" style="display:none" onclick="showSetup('rp')">เปลี่ยนแหล่งข้อมูล</button>
     </div>
-    <div class="filter-bar">
-      <div class="fg"><label class="fl">ปี</label><select class="fs" id="rp-fy" onchange="rpFilter()"></select></div>
-      <div class="fg"><label class="fl">เดือน</label><select class="fs" id="rp-fm" onchange="rpFilter()"></select></div>
-      <div class="fg"><label class="fl">Machine</label><select class="fs" id="rp-fmc" onchange="rpFilter()"></select></div>
-      <div class="fg"><label class="fl">Problem</label><select class="fs" id="rp-fpb" onchange="rpFilter()"></select></div>
-      <div style="display:flex;gap:6px;align-self:flex-end">
-        <button class="btn-ghost" onclick="rpReset()">↺ Reset</button>
-      </div>
-      <div class="chip-bar" id="rp-chips"></div>
+    <div class="fbar">
+      <div class="fg"><span class="fl">ปี</span><select class="fsel" id="rp-fy" onchange="rpF()"></select></div>
+      <div class="fg"><span class="fl">เดือน</span><select class="fsel" id="rp-fm" onchange="rpF()"></select></div>
+      <div class="fg"><span class="fl">Machine</span><select class="fsel" id="rp-fmc" onchange="rpF()"></select></div>
+      <div class="fg"><span class="fl">Problem</span><select class="fsel" id="rp-fpb" onchange="rpF()"></select></div>
+      <div class="fg"><span class="fl">แผนก</span><select class="fsel" id="rp-fd" onchange="rpF()"></select></div>
+      <div class="fg"><span class="fl">โรงงาน</span><select class="fsel" id="rp-ff" onchange="rpF()"></select></div>
+      <button class="btn btn-ghost btn-sm" onclick="rpRst()">↺ Reset</button>
+      <div class="chips" id="rp-chips"></div>
     </div>
     <div class="content" id="rp-content"></div>
   </div>
@@ -236,24 +245,23 @@ tfoot td{background:var(--gray-50);font-weight:600;padding:9px 12px;border-top:2
 
 <!-- ══ ADD PAPER ══ -->
 <div class="page" id="page-ap">
-  <div id="ap-nodata"><div class="setup-wrap" id="ap-setup-nodata"></div></div>
-  <div id="ap-setup" style="display:none"><div class="setup-wrap" id="ap-setup-inner"></div></div>
-  <div id="ap-data" style="display:none">
-    <div class="refresh-bar">
-      <button class="btn-primary" style="padding:6px 14px;font-size:12px" onclick="refreshAP()">🔄 Refresh</button>
-      <span id="ap-src-label"></span>
-      <span class="last-update" id="ap-last-update"></span>
-      <button class="btn-ghost" style="font-size:11px;padding:5px 10px" id="ap-change-src" onclick="showSetup('ap')" style="display:none">📂 เปลี่ยนแหล่งข้อมูล</button>
+  <div id="ap-nodata"><div class="setup-wrap" id="ap-nd"></div></div>
+  <div id="ap-setup" style="display:none"><div class="setup-wrap" id="ap-si"></div></div>
+  <div id="ap-live" style="display:none">
+    <div class="rbar">
+      <button class="btn btn-blue btn-sm" onclick="refreshAP()">↺ Refresh</button>
+      <span id="ap-src"></span>
+      <span class="spacer"></span>
+      <span class="ts" id="ap-ts"></span>
+      <button class="btn btn-ghost btn-sm" id="ap-chg" style="display:none" onclick="showSetup('ap')">เปลี่ยนแหล่งข้อมูล</button>
     </div>
-    <div class="filter-bar">
-      <div class="fg"><label class="fl">ปี</label><select class="fs" id="ap-fy" onchange="apFilter()"></select></div>
-      <div class="fg"><label class="fl">เดือน</label><select class="fs" id="ap-fm" onchange="apFilter()"></select></div>
-      <div class="fg"><label class="fl">แผนก</label><select class="fs" id="ap-fd" onchange="apFilter()"></select></div>
-      <div class="fg"><label class="fl">โรงงาน</label><select class="fs" id="ap-ff" onchange="apFilter()"></select></div>
-      <div style="display:flex;gap:6px;align-self:flex-end">
-        <button class="btn-ghost" onclick="apReset()">↺ Reset</button>
-      </div>
-      <div class="chip-bar" id="ap-chips"></div>
+    <div class="fbar">
+      <div class="fg"><span class="fl">ปี</span><select class="fsel" id="ap-fy" onchange="apF()"></select></div>
+      <div class="fg"><span class="fl">เดือน</span><select class="fsel" id="ap-fm" onchange="apF()"></select></div>
+      <div class="fg"><span class="fl">แผนก</span><select class="fsel" id="ap-fd" onchange="apF()"></select></div>
+      <div class="fg"><span class="fl">โรงงาน</span><select class="fsel" id="ap-ff" onchange="apF()"></select></div>
+      <button class="btn btn-ghost btn-sm" onclick="apRst()">↺ Reset</button>
+      <div class="chips" id="ap-chips"></div>
     </div>
     <div class="content" id="ap-content"></div>
   </div>
@@ -261,443 +269,367 @@ tfoot td{background:var(--gray-50);font-weight:600;padding:9px 12px;border-top:2
 
 <!-- ══ CONFIG ══ -->
 <div class="page" id="page-cfg">
-  <div class="content" style="max-width:700px">
-    <div style="margin-bottom:20px;padding-top:8px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div class="section-title" style="font-size:16px;margin-bottom:4px">⚙️ ตั้งค่า Dashboard</div>
-        <div style="font-size:12px;color:var(--gray-600)">จัดการแหล่งข้อมูล, Target Lines, และการเชื่อมต่อ</div>
-      </div>
-      <button class="btn-danger" onclick="lockCfg()">🔒 ล็อกอีกครั้ง</button>
+  <div class="content" style="max-width:660px">
+    <div style="padding-top:6px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:15px;font-weight:600">⚙️ ตั้งค่า</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">แหล่งข้อมูล, Target Lines, PIN</div></div>
+      <button class="btn btn-danger btn-sm" onclick="lockCfg()">🔒 ล็อก</button>
     </div>
-    <div id="cfg-content"></div>
+    <div id="cfg-body"></div>
   </div>
 </div>
 
-<!-- LOCK OVERLAY -->
-<div class="lock-overlay" id="lockOverlay" style="display:none">
+<!-- LOCK -->
+<div class="lock-overlay" id="lockOv" style="display:none">
   <div class="lock-box">
-    <div style="font-size:36px;margin-bottom:10px">🔒</div>
+    <div style="font-size:32px;margin-bottom:8px">🔒</div>
     <div class="lock-title">ยืนยันตัวตน</div>
-    <div class="lock-sub" id="lockSub">กรอก PIN เพื่อเข้าหน้าตั้งค่า</div>
-    <div class="lock-dots" id="lockDots">
-      <div class="lock-dot" id="ld0"></div>
-      <div class="lock-dot" id="ld1"></div>
-      <div class="lock-dot" id="ld2"></div>
-      <div class="lock-dot" id="ld3"></div>
-    </div>
+    <div class="lock-sub" id="lock-sub">กรอก PIN 4 หลัก</div>
+    <div class="lock-dots"><div class="ld" id="ld0"></div><div class="ld" id="ld1"></div><div class="ld" id="ld2"></div><div class="ld" id="ld3"></div></div>
     <div class="pin-pad">
-      <button class="pin-btn" onclick="pinPress(1)">1</button>
-      <button class="pin-btn" onclick="pinPress(2)">2</button>
-      <button class="pin-btn" onclick="pinPress(3)">3</button>
-      <button class="pin-btn" onclick="pinPress(4)">4</button>
-      <button class="pin-btn" onclick="pinPress(5)">5</button>
-      <button class="pin-btn" onclick="pinPress(6)">6</button>
-      <button class="pin-btn" onclick="pinPress(7)">7</button>
-      <button class="pin-btn" onclick="pinPress(8)">8</button>
-      <button class="pin-btn" onclick="pinPress(9)">9</button>
-      <button class="pin-btn" style="font-size:13px" onclick="pinClear()">⌫</button>
-      <button class="pin-btn" onclick="pinPress(0)">0</button>
-      <button class="pin-btn" style="font-size:13px;color:var(--gray-600)" onclick="closeLock()">✕</button>
+      <button class="pin-btn" onclick="pp(1)">1</button><button class="pin-btn" onclick="pp(2)">2</button><button class="pin-btn" onclick="pp(3)">3</button>
+      <button class="pin-btn" onclick="pp(4)">4</button><button class="pin-btn" onclick="pp(5)">5</button><button class="pin-btn" onclick="pp(6)">6</button>
+      <button class="pin-btn" onclick="pp(7)">7</button><button class="pin-btn" onclick="pp(8)">8</button><button class="pin-btn" onclick="pp(9)">9</button>
+      <button class="pin-btn" style="font-size:12px" onclick="pbk()">⌫</button><button class="pin-btn" onclick="pp(0)">0</button>
+      <button class="pin-btn" style="font-size:11px;color:var(--ink3)" onclick="closeLock()">✕</button>
     </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════
-// CONSTANTS & STATE
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
+// MACHINE → DEPT/PROCESS/FACTORY MAP
+// ═══════════════════════════════════════
+const MC_MAP = {};
+[
+['BI01','PR1','PR','Factory1'],['BI201','PR2','IS','Factory2'],['BI201','PR2','SG','Factory2'],['BI201','PR2','BI','Factory2'],
+['BM','TDC','BM','Factory3'],['BT01','CON1','BT','Factory1'],['CA01','CON1','CA','Factory1'],['CA02','CON1','CA','Factory1'],
+['CA03','CON1','CA','Factory1'],['CM','TDC','CM','Factory3'],['DC04','CON1','DC','Factory1'],['DC05','CON1','DC','Factory1'],
+['DC06','CON1','DC','Factory1'],['DC09','CON1','DC','Factory1'],['DC10','CON1','DC','Factory1'],['DC12','CON1','DC','Factory1'],
+['DC13','CON1','DC','Factory1'],['DC14','CON1','DC','Factory1'],['DC15','CON1','DC','Factory1'],['DC16','CON1','DC','Factory1'],
+['DC201','CON2','DC','Factory2'],['DC202','CON2','DC','Factory2'],['DC203','CON2','DC','Factory2'],['DC204','CON2','DC','Factory2'],
+['DC205','CON2','DC','Factory2'],['DC206','CON2','DC','Factory2'],['F3','F3','Assm','Factory3'],['FM201','CON2','FM','Factory2'],
+['GF01','GL','GF','Factory1'],['GH','GL','GH','Factory1'],['GL01','GL','GL','Factory1'],['GL02','GL','GL','Factory1'],
+['GL03','GL','GL','Factory1'],['GL04','GL','GL','Factory1'],['GL05','GL','GL','Factory1'],['GL10','GL','GL','Factory1'],
+['GL11','GL','GL','Factory1'],['GL12','GL','GL','Factory1'],['GL13','GL','GL','Factory1'],['GL14','GL','GL','Factory1'],
+['GL201','CON2','GL','Factory2'],['GL202','CON2','GL','Factory2'],['GL203','CON2','GL','Factory2'],['GL204','CON2','GL','Factory2'],
+['GL205','CON2','GL','Factory2'],['GL206','CON2','GL','Factory2'],['GL207','CON2','GL','Factory2'],['GL208','CON2','GL','Factory2'],
+['GPF1','GL','GP','Factory1'],['GPF2','CON2','GP','Factory2'],['GS05','PE','GS','Factory1'],['GS202','PR2','GS','Factory2'],
+['GS301','TDC','GS','Factory3'],['GSB301','TDC','GSB','Factory3'],['HS02','CON1','HS','Factory1'],['HS04','CON1','HS','Factory1'],
+['HS201','CON2','HS','Factory2'],['INKF1','GL','INK','Factory1'],['IS01','PR1','PR','Factory1'],['IS02','PR1','PR','Factory1'],
+['IS201','PR2','IS','Factory2'],['IS202','PR2','IS','Factory2'],['LA01','CON1','LA','Factory1'],['LA02','CON1','LA','Factory1'],
+['LA03','CON1','LA','Factory1'],['LA05','CON1','LA','Factory1'],['MM301','TDC','MM','Factory3'],['MSTF1','CON1','ST','Factory1'],
+['MSTF2','CON2','ST','Factory2'],['PCH301','TDC','PCH','Factory3'],['PCH302','TDC','PCH','Factory3'],['PL301','TDC','PL','Factory3'],
+['PL302','TDC','PL','Factory3'],['PL303','TDC','PL','Factory3'],['PRT03','PR1','PR','Factory1'],['PRT08','PR1','PR','Factory1'],
+['PRT09','PR1','PR','Factory1'],['PRT10','PR1','PR','Factory1'],['PRT15','PR1','PR','Factory1'],['PRT16','PR1','PR','Factory1'],
+['PRT17','PR1','PR','Factory1'],['PRT201','PR2','PR','Factory2'],['PRT202','PR2','PR','Factory2'],['PRT203','PR2','PR','Factory2'],
+['PRT204','PR2','PR','Factory2'],['PRT205','PR2','PR','Factory2'],['RA','TDC','RA','Factory3'],['RF','TDC','RF','Factory3'],
+['RM','TDC','RM','Factory3'],['SC01','PE','SC','Factory1'],['SG01','PR1','PR','Factory1'],['SGF2','PR2','SG','Factory2'],
+['SH301','TDC','SH','Factory3'],['SH302','TDC','SH','Factory3'],['SP01','PR1','PR','Factory1'],['SP201','PR2','IS','Factory2'],
+['SPF2','PR2','SP','Factory2'],['SS','TDC','SS','Factory3'],['ST01','CON1','ST','Factory1'],['ST03','CON1','ST','Factory1'],
+['ST04','CON1','ST','Factory1'],['ST201','CON2','ST','Factory2'],['ST203','CON2','ST','Factory2'],['ST204','CON2','ST','Factory2'],
+['WD02','GL','WD','Factory1'],['WD201','CON2','WD','Factory2'],['OUTPR','PR1','PR','Factory1']
+].forEach(([mc,dept,proc,fac])=>{if(!MC_MAP[mc])MC_MAP[mc]={dept,proc,fac};});
+
+function mcLookup(mc){return MC_MAP[mc]||{dept:'OTHER',proc:'OTHER',fac:'OTHER'};}
+
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
 const MN=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-const fmt=n=>isNaN(n)?'—':Math.round(n).toLocaleString('th-TH');
-const fB=n=>{const a=Math.abs(n);if(a>=1e6)return(n/1e6).toFixed(2)+'M';if(a>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();}
-const charts={};
-function dc(k){if(charts[k]){try{charts[k].destroy()}catch(e){}delete charts[k];}}
-
-const RP={all:[],fil:[],sort:{c:'val',d:-1},pg:0,search:'',src:null,lastUpdate:null};
-const AP={all:[],fil:[],sort:{c:'val',d:-1},pg:0,search:'',src:null,lastUpdate:null};
+const f=n=>isNaN(n)?'—':Math.round(n).toLocaleString('th-TH');
+const fB=n=>{const a=Math.abs(n);if(a>=1e6)return(n/1e6).toFixed(2)+'M';if(a>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();};
+const CHS={};
+function dc(k){if(CHS[k]){try{CHS[k].destroy();}catch(e){}delete CHS[k];}}
+const DEFAULT_PIN='1234';
 const PAGE=50;
-const C_BLUE=['#1565C0','#1976D2','#1E88E5','#42A5F5','#0288D1','#0097A7','#00838F','#00695C','#2E7D32','#388E3C','#558B2F','#827717'];
-const C_PURPLE=['#6A1B9A','#7B1FA2','#8E24AA','#9C27B0','#AB47BC','#4527A0','#512DA8','#5E35B1','#673AB7','#7E57C2','#5C6BC0','#3949AB'];
-const C_WARN=['#E53935','#FB8C00','#FDD835','#43A047','#039BE5','#8E24AA','#5E35B1','#00897B','#C0CA33','#F4511E'];
 
-const DEFAULT_PIN = '1234';
+// Data state
+const RP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:''};
+const AP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:''};
+
+// ═══════════════════════════════════════
+// GS CODE
+// ═══════════════════════════════════════
 const GS_CODE=`function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetName = (e && e.parameter && e.parameter.sheet) || 'Replan';
-  var sh = ss.getSheetByName(sheetName) || ss.getSheets()[0];
-  var page = (e && e.parameter && e.parameter.page)
-             ? parseInt(e.parameter.page) : 0;
+  var sheetName = (e&&e.parameter&&e.parameter.sheet)||'Replan';
+  var sh = ss.getSheetByName(sheetName)||ss.getSheets()[0];
+  var page = (e&&e.parameter&&e.parameter.page)?parseInt(e.parameter.page):0;
   var pageSize = 5000;
   var all = sh.getDataRange().getValues();
-  var headers = all[0];
-  var totalRows = all.length - 1;
-  var start = 1 + page * pageSize;
-  var end = Math.min(start + pageSize, all.length);
-  var rows = page === 0
-    ? all.slice(0, Math.min(1 + pageSize, all.length))
-    : all.slice(start, end);
-  return ContentService
-    .createTextOutput(JSON.stringify({
-      data: rows, totalRows: totalRows,
-      pageSize: pageSize, page: page, sheet: sheetName
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+  var totalRows = all.length-1;
+  var rows = page===0 ? all.slice(0,Math.min(1+pageSize,all.length))
+                      : all.slice(1+page*pageSize, Math.min(1+(page+1)*pageSize,all.length));
+  return ContentService.createTextOutput(JSON.stringify({
+    data:rows, totalRows:totalRows, pageSize:pageSize, page:page, sheet:sheetName
+  })).setMimeType(ContentService.MimeType.JSON);
 }`;
 
-// Default target lines
-function defaultTargetLines(k){
-  return k==='rp'
-    ? [{id:1,name:'Target',val:500000,color:'#E65100',dash:'dashed',tension:'step',show:true}]
-    : [{id:1,name:'Target',val:400000,color:'#6A1B9A',dash:'dashed',tension:'step',show:true}];
-}
-function getTargetLines(k){
-  try{const s=localStorage.getItem(`tl_${k}`);return s?JSON.parse(s):defaultTargetLines(k);}catch{return defaultTargetLines(k);}
-}
-function saveTargetLines(k,lines){localStorage.setItem(`tl_${k}`,JSON.stringify(lines));}
+// ═══════════════════════════════════════
+// TARGET LINES — stored in GS Config Sheet
+// ═══════════════════════════════════════
+// Cache in memory, load from GS on init
+let TL = {rp:[], ap:[], loaded:false};
 
-// ══════════════════════════════════════
+const TL_DEFAULTS = {
+  rp:[{id:1,name:'Target',val:500000,color:'#2563EB',dash:'dashed',curve:'step',show:true}],
+  ap:[{id:1,name:'Target',val:400000,color:'#7C3AED',dash:'dashed',curve:'step',show:true}]
+};
+
+async function loadTargetLines(){
+  const url = (localStorage.getItem('gs_url')||'').trim();
+  if(!url){TL.rp=JSON.parse(localStorage.getItem('tl_rp')||'null')||TL_DEFAULTS.rp;TL.ap=JSON.parse(localStorage.getItem('tl_ap')||'null')||TL_DEFAULTS.ap;TL.loaded=true;return;}
+  try{
+    const res = await fetch(`${url}?sheet=Config`);
+    const d = await res.json();
+    if(d.data&&d.data.length>1){
+      const hdrs=d.data[0];
+      const rows=d.data.slice(1);
+      const get=(r,h)=>r[hdrs.findIndex(x=>String(x).toLowerCase()===h.toLowerCase())]??'';
+      const rpLines=[],apLines=[];
+      rows.forEach(r=>{
+        const tab=String(get(r,'tab')).toLowerCase();
+        const ln={id:Date.now()+Math.random(),name:String(get(r,'name')||'Target'),val:parseFloat(get(r,'val'))||0,color:String(get(r,'color')||'#2563EB'),dash:String(get(r,'dash')||'dashed'),curve:String(get(r,'curve')||'step'),show:String(get(r,'show')).toLowerCase()!=='false'};
+        if(tab==='rp'||tab==='replan')rpLines.push(ln);
+        if(tab==='ap'||tab==='addpaper')apLines.push(ln);
+      });
+      TL.rp=rpLines.length?rpLines:TL_DEFAULTS.rp;
+      TL.ap=apLines.length?apLines:TL_DEFAULTS.ap;
+    } else {
+      TL.rp=TL_DEFAULTS.rp;TL.ap=TL_DEFAULTS.ap;
+    }
+  }catch{TL.rp=JSON.parse(localStorage.getItem('tl_rp')||'null')||TL_DEFAULTS.rp;TL.ap=JSON.parse(localStorage.getItem('tl_ap')||'null')||TL_DEFAULTS.ap;}
+  TL.loaded=true;
+}
+
+// Save target lines to localStorage (fallback if no GS)
+function saveTL(k){localStorage.setItem(`tl_${k}`,JSON.stringify(TL[k]));}
+
+// ═══════════════════════════════════════
 // LOGO CLICK — 5x unlock
-// ══════════════════════════════════════
-let logoClicks=0, logoTimer=null;
+// ═══════════════════════════════════════
+let lClicks=0,lTimer=null;
 function logoClick(){
-  const logo=document.getElementById('appLogo');
-  logo.classList.remove('flash');void logo.offsetWidth;logo.classList.add('flash');
-  logoClicks++;
-  clearTimeout(logoTimer);
-  logoTimer=setTimeout(()=>{logoClicks=0;},2000);
-  if(logoClicks>=5){
-    logoClicks=0;
-    openLock();
-  }
+  const el=document.getElementById('logo');
+  el.style.background='var(--blue-lt)';setTimeout(()=>el.style.background='',200);
+  lClicks++;clearTimeout(lTimer);lTimer=setTimeout(()=>{lClicks=0;},2000);
+  if(lClicks>=5){lClicks=0;openLock();}
 }
 
-// ══════════════════════════════════════
-// PIN / LOCK
-// ══════════════════════════════════════
-let pinBuf=[], cfgUnlocked=false;
-function openLock(){
-  pinBuf=[];
-  updateDots('');
-  document.getElementById('lockSub').textContent='กรอก PIN เพื่อเข้าหน้าตั้งค่า';
-  document.getElementById('lockOverlay').style.display='flex';
-}
-function closeLock(){document.getElementById('lockOverlay').style.display='none';pinBuf=[];}
-function pinPress(n){
-  if(pinBuf.length>=4)return;
-  pinBuf.push(String(n));
-  updateDots('');
+// ═══════════════════════════════════════
+// PIN
+// ═══════════════════════════════════════
+let pinBuf=[],cfgOn=false;
+function openLock(){pinBuf=[];updDots('');document.getElementById('lock-sub').textContent='กรอก PIN 4 หลัก';document.getElementById('lockOv').style.display='flex';}
+function closeLock(){document.getElementById('lockOv').style.display='none';pinBuf=[];}
+function pp(n){
+  if(pinBuf.length>=4)return;pinBuf.push(String(n));updDots('');
   if(pinBuf.length===4){
     const pin=localStorage.getItem('dash_pin')||DEFAULT_PIN;
-    if(pinBuf.join('')===pin){
-      cfgUnlocked=true;
-      document.getElementById('tab-cfg').classList.add('unlocked');
-      // show change-src buttons
-      document.getElementById('rp-change-src').style.display='';
-      document.getElementById('ap-change-src').style.display='';
-      closeLock();
-      switchTab('cfg');
-    } else {
-      updateDots('error');
-      document.getElementById('lockSub').textContent='PIN ไม่ถูกต้อง — ลองอีกครั้ง';
-      setTimeout(()=>{pinBuf=[];updateDots('');},800);
-    }
+    if(pinBuf.join('')===pin){cfgOn=true;document.getElementById('tab-cfg').classList.add('on');['rp-chg','ap-chg'].forEach(id=>document.getElementById(id).style.display='');closeLock();sw('cfg');}
+    else{updDots('err');document.getElementById('lock-sub').textContent='PIN ไม่ถูกต้อง';setTimeout(()=>{pinBuf=[];updDots('');},700);}
   }
 }
-function pinClear(){if(pinBuf.length)pinBuf.pop();updateDots('');}
-function updateDots(state){
-  for(let i=0;i<4;i++){
-    const d=document.getElementById('ld'+i);
-    d.className='lock-dot'+(i<pinBuf.length?' filled':'')+(state==='error'?' error':'');
-  }
-}
-function lockCfg(){
-  cfgUnlocked=false;
-  document.getElementById('tab-cfg').classList.remove('unlocked');
-  document.getElementById('rp-change-src').style.display='none';
-  document.getElementById('ap-change-src').style.display='none';
-  switchTab('rp');
-}
+function pbk(){if(pinBuf.length)pinBuf.pop();updDots('');}
+function updDots(s){for(let i=0;i<4;i++){const d=document.getElementById('ld'+i);d.className='ld'+(i<pinBuf.length?' on':'')+(s==='err'?' err':'');}}
+function lockCfg(){cfgOn=false;document.getElementById('tab-cfg').classList.remove('on');['rp-chg','ap-chg'].forEach(id=>document.getElementById(id).style.display='none');sw('rp');}
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // INIT
-// ══════════════════════════════════════
-window.addEventListener('DOMContentLoaded',()=>{
-  renderSetupPanel('rp',document.getElementById('rp-setup-nodata'),false);
-  renderSetupPanel('ap',document.getElementById('ap-setup-nodata'),false);
-  renderCfgPage();
-  updateStatus();
-  const gsUrl=localStorage.getItem('gs_url')||'';
-  if(gsUrl&&localStorage.getItem('rp_src_type')==='gs') autoLoadGS('rp',gsUrl);
-  if(gsUrl&&localStorage.getItem('ap_src_type')==='gs') autoLoadGS('ap',gsUrl);
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded',async()=>{
+  renderSetup('rp',document.getElementById('rp-nd'),false);
+  renderSetup('ap',document.getElementById('ap-nd'),false);
+  await loadTargetLines();
+  const url=localStorage.getItem('gs_url')||'';
+  if(url&&localStorage.getItem('rp_src')==='gs')autoGS('rp',url);
+  if(url&&localStorage.getItem('ap_src')==='gs')autoGS('ap',url);
+  updStatus();
 });
 
-function switchTab(t){
-  if(t==='cfg'&&!cfgUnlocked){openLock();return;}
+function sw(t){
+  if(t==='cfg'&&!cfgOn){openLock();return;}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
   document.getElementById('tab-'+t).classList.add('active');
-  if(t==='cfg')renderCfgPage();
+  if(t==='cfg')renderCfg();
 }
 
-function updateStatus(){
+function updStatus(){
   const rn=RP.all.length,an=AP.all.length;
   const el=document.getElementById('appStatus');
-  if(!rn&&!an){el.textContent='ยังไม่มีข้อมูล';return;}
+  if(!rn&&!an){el.className='status-pill';el.textContent='ยังไม่มีข้อมูล';return;}
   const p=[];if(rn)p.push(`RP: ${rn.toLocaleString()}`);if(an)p.push(`AP: ${an.toLocaleString()}`);
-  el.textContent=p.join(' | ');
+  el.className='status-pill live';el.textContent=p.join(' | ');
 }
 
 function showSetup(k){
-  if(!cfgUnlocked)return;
-  document.getElementById(`${k}-data`).style.display='none';
+  if(!cfgOn)return;
+  document.getElementById(`${k}-live`).style.display='none';
   document.getElementById(`${k}-nodata`).style.display='none';
   document.getElementById(`${k}-setup`).style.display='';
-  renderSetupPanel(k,document.getElementById(`${k}-setup-inner`),true);
+  renderSetup(k,document.getElementById(`${k}-si`),true);
 }
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // SETUP PANEL
-// ══════════════════════════════════════
-function renderSetupPanel(k,container,isOverlay){
-  const label=k==='rp'?'Replan (Sheet: "Replan")':'Add Paper (Sheet: "Addpaper")';
-  const sheetName=k==='rp'?'Replan':'Addpaper';
-  const savedUrl=localStorage.getItem('gs_url')||'';
-  container.innerHTML=`
-    <div class="setup-card">
-      <div class="setup-hdr" style="${k==='ap'?'background:linear-gradient(135deg,var(--purple),#7B1FA2)':''}">
-        <div class="setup-hdr-title">${k==='rp'?'🔄':'📄'} แหล่งข้อมูล ${label}</div>
-        <div class="setup-hdr-sub">เลือกวิธีโหลดข้อมูล</div>
+// ═══════════════════════════════════════
+function renderSetup(k,con,_){
+  const sn=k==='rp'?'Replan':'Addpaper';
+  const su=localStorage.getItem('gs_url')||'';
+  con.innerHTML=`
+  <div class="setup-card">
+    <div class="setup-head" style="${k==='ap'?'background:#7C3AED':''}">
+      <div class="setup-head-t">${k==='rp'?'🔄 Replan':'📄 Add Paper'}</div>
+      <div class="setup-head-s">Sheet: "${sn}" — เลือกแหล่งข้อมูล</div>
+    </div>
+    <div class="setup-body">
+      <div style="font-size:12px;font-weight:600;margin-bottom:8px">🔗 Google Sheets</div>
+      <div class="hint">
+        <strong>ตั้งค่าครั้งเดียว:</strong> Extensions → Apps Script → วางโค้ด → Deploy → Web App (Anyone)<br>
+        สำหรับ Target Lines เพิ่ม Sheet ชื่อ <code>Config</code> columns: <code>tab</code> <code>name</code> <code>val</code> <code>color</code> <code>dash</code> <code>curve</code> <code>show</code>
       </div>
-      <div class="setup-body">
-        <div style="margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--gray-800)">🔗 Google Sheets (แนะนำ)</div>
-          <div class="hint-box">
-            <strong>ตั้งค่าครั้งเดียว:</strong><br>
-            1. Google Sheets → <code>Extensions</code> → <code>Apps Script</code><br>
-            2. วางโค้ด → Deploy → Web App (<code>Execute as: Me</code>, <code>Anyone</code>)<br>
-            3. Copy URL มาวางด้านล่าง
-          </div>
-          <div style="margin-bottom:8px">
-            <button class="btn-ghost" onclick="toggleEl('${k}-code-box')" style="font-size:11px">📋 ดู Apps Script Code</button>
-            <button class="btn-ghost" onclick="copyTxt('${k}-code-txt')" style="font-size:11px;margin-left:6px">📋 Copy</button>
-          </div>
-          <div id="${k}-code-box" style="display:none">
-            <div class="code-block" id="${k}-code-txt">${escHtml(GS_CODE)}</div>
-          </div>
-          <div class="gs-row">
-            <input class="gs-url-input" id="${k}-gs-url" placeholder="https://script.google.com/macros/s/…/exec"
-              value="${escHtml(savedUrl)}" oninput="localStorage.setItem('gs_url',this.value)">
-            <button class="btn-primary" onclick="loadGS('${k}')">🔗 โหลด</button>
-          </div>
-          <div id="${k}-prog" style="display:none" class="prog-wrap">
-            <div class="prog-track"><div class="prog-fill" id="${k}-pfill" style="width:5%"></div></div>
-            <div class="prog-label" id="${k}-plbl">กำลังเชื่อมต่อ...</div>
-          </div>
-          <div class="gs-status" id="${k}-gs-st"></div>
-        </div>
-        <div class="or-divider">หรือ</div>
-        <div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--gray-800)">📂 อัปโหลดไฟล์ Excel</div>
-          <div class="upload-zone" id="${k}-dz"
-            onclick="document.getElementById('${k}-fi').click()"
-            ondragover="dzOver(event,'${k}-dz')" ondragleave="dzLeave('${k}-dz')" ondrop="dzDrop(event,'${k}')">
-            <div class="upload-zone-title">ลากไฟล์ .xlsx มาวางที่นี่</div>
-            <div class="upload-zone-sub">อ่าน Sheet ชื่อ "${sheetName}" อัตโนมัติ (ถ้าไม่มีจะอ่าน Sheet แรก)</div>
-            <button class="btn-secondary" onclick="event.stopPropagation();document.getElementById('${k}-fi').click()">📂 เลือกไฟล์</button>
-          </div>
-          <input type="file" id="${k}-fi" accept=".xlsx,.xls" style="display:none"
-            onchange="${k==='rp'?'handleFileRP':'handleFileAP'}(this)">
-        </div>
+      <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="toggleEl('${k}-cb')">ดู Apps Script Code</button>
+        <button class="btn btn-ghost btn-sm" onclick="cpTxt('${k}-ct')">Copy Code</button>
       </div>
-    </div>`;
+      <div id="${k}-cb" style="display:none"><div class="code-block" id="${k}-ct">${escH(GS_CODE)}</div></div>
+      <div class="gs-row">
+        <input class="gs-in" id="${k}-gsu" placeholder="https://script.google.com/macros/s/…/exec" value="${escH(su)}"
+          oninput="localStorage.setItem('gs_url',this.value)">
+        <button class="btn btn-blue" onclick="loadGS('${k}')">โหลด</button>
+      </div>
+      <div id="${k}-prog" style="display:none" class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="${k}-pf" style="width:5%"></div></div>
+        <div class="prog-lbl" id="${k}-pl"></div>
+      </div>
+      <div class="gs-st" id="${k}-st"></div>
+      <div class="or-div">หรือ</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:8px">📂 อัปโหลด Excel</div>
+      <div class="upload-zone" id="${k}-dz"
+        onclick="document.getElementById('${k}-fi').click()"
+        ondragover="dzO(event,'${k}-dz')" ondragleave="dzL('${k}-dz')" ondrop="dzD(event,'${k}')">
+        <div class="upload-t">ลากไฟล์ .xlsx มาวางที่นี่</div>
+        <div class="upload-s">อ่าน Sheet "${sn}" อัตโนมัติ</div>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();document.getElementById('${k}-fi').click()">เลือกไฟล์</button>
+      </div>
+      <input type="file" id="${k}-fi" accept=".xlsx,.xls" style="display:none"
+        onchange="${k==='rp'?'hFRP':'hFAP'}(this)">
+    </div>
+  </div>`;
 }
 
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function toggleEl(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'block':'none';}
-function copyTxt(id){const t=document.getElementById(id)?.textContent||'';navigator.clipboard?.writeText(t).then(()=>alert('✅ Copy แล้วครับ!'));}
+const escH=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function toggleEl(id){const e=document.getElementById(id);e.style.display=e.style.display==='none'?'block':'none';}
+function cpTxt(id){navigator.clipboard?.writeText(document.getElementById(id)?.textContent||'').then(()=>alert('Copy แล้วครับ!'));}
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // CONFIG PAGE
-// ══════════════════════════════════════
-function renderCfgPage(){
-  const con=document.getElementById('cfg-content');if(!con)return;
-  const gsUrl=localStorage.getItem('gs_url')||'';
+// ═══════════════════════════════════════
+function renderCfg(){
+  const con=document.getElementById('cfg-body');if(!con)return;
+  const su=localStorage.getItem('gs_url')||'';
   const pin=localStorage.getItem('dash_pin')||DEFAULT_PIN;
   con.innerHTML=`
-    <div class="card" style="margin-bottom:18px">
-      <div class="card-hdr"><div><div class="card-title">🔗 Google Sheets URL</div><div class="card-sub">URL เดียวสำหรับทั้ง Replan และ Addpaper</div></div></div>
-      <div class="card-body">
-        <div class="gs-row">
-          <input class="gs-url-input" id="cfg-gs-url" placeholder="https://script.google.com/macros/s/…/exec"
-            value="${escHtml(gsUrl)}" oninput="localStorage.setItem('gs_url',this.value)">
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-          <button class="btn-primary" onclick="loadGS('rp')">🔄 Refresh Replan</button>
-          <button class="btn-primary" style="background:var(--purple)" onclick="loadGS('ap')">🔄 Refresh Add Paper</button>
-          <button class="btn-secondary" onclick="loadGS('rp');setTimeout(()=>loadGS('ap'),300)">🔄 Refresh ทั้งคู่</button>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:16px;font-size:11px">
-          <span id="cfg-rp-st"></span><span id="cfg-ap-st"></span>
-        </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div><div class="card-t">🔗 Google Sheets URL</div><div class="card-s">URL เดียวสำหรับ Replan, Addpaper และ Config (Target)</div></div></div>
+    <div class="card-b">
+      <div class="gs-row">
+        <input class="gs-in" id="cfg-gsu" value="${escH(su)}" placeholder="https://script.google.com/macros/s/…/exec"
+          oninput="localStorage.setItem('gs_url',this.value)">
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn btn-blue btn-sm" onclick="loadGS('rp')">↺ Refresh Replan</button>
+        <button class="btn btn-blue btn-sm" style="background:#7C3AED" onclick="loadGS('ap')">↺ Refresh Add Paper</button>
+        <button class="btn btn-outline btn-sm" onclick="loadGS('rp');setTimeout(()=>loadGS('ap'),400)">↺ ทั้งคู่</button>
+        <button class="btn btn-outline btn-sm" onclick="reloadTL()">↺ Reload Target Lines</button>
+      </div>
+      <div style="font-size:10px;color:var(--ink3)">
+        <span id="cfg-rp-st"></span>&nbsp;&nbsp;<span id="cfg-ap-st"></span>
       </div>
     </div>
-    <div class="card" style="margin-bottom:18px">
-      <div class="card-hdr"><div><div class="card-title">🔑 เปลี่ยน PIN</div><div class="card-sub">PIN 4 หลักสำหรับล็อกหน้าตั้งค่า (ค่าเริ่มต้น: ${DEFAULT_PIN})</div></div></div>
-      <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div>
-          <label style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;display:block;margin-bottom:4px">PIN ใหม่ (4 หลัก)</label>
-          <input type="password" id="cfg-pin-new" maxlength="4" placeholder="••••"
-            style="padding:8px 12px;border:1.5px solid var(--gray-300);border-radius:var(--r8);font-size:16px;font-family:'IBM Plex Mono',monospace;width:110px;outline:none;letter-spacing:4px">
-        </div>
-        <button class="btn-primary" onclick="savePin()">💾 บันทึก PIN</button>
-        <span id="cfg-pin-msg" style="font-size:11px"></span>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div><div class="card-t">🔑 PIN</div><div class="card-s">PIN 4 หลัก สำหรับ unlock หน้าตั้งค่า (เริ่มต้น: ${DEFAULT_PIN})</div></div></div>
+    <div class="card-b" style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:4px">PIN ใหม่</div>
+        <input type="password" id="cfg-pin" maxlength="4" placeholder="••••"
+          style="padding:7px 11px;border:1px solid var(--line);border-radius:var(--r);font-size:15px;font-family:'IBM Plex Mono',monospace;width:100px;outline:none;letter-spacing:4px">
       </div>
-    </div>`;
+      <button class="btn btn-blue btn-sm" onclick="savePin()">บันทึก</button>
+      <span id="cfg-pin-msg" style="font-size:10px"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div><div class="card-t">📋 Config Sheet — วิธีตั้ง Target Lines</div></div></div>
+    <div class="card-b">
+      <div class="hint">
+        สร้าง Sheet ชื่อ <code>Config</code> ใน Google Sheets เดียวกัน แล้วใส่ข้อมูลตามนี้:<br><br>
+        <strong>Columns:</strong> <code>tab</code> | <code>name</code> | <code>val</code> | <code>color</code> | <code>dash</code> | <code>curve</code> | <code>show</code><br><br>
+        <strong>tab:</strong> <code>rp</code> = Replan, <code>ap</code> = Add Paper<br>
+        <strong>dash:</strong> <code>solid</code> / <code>dashed</code> / <code>dotted</code><br>
+        <strong>curve:</strong> <code>step</code> / <code>straight</code> / <code>smooth</code><br>
+        <strong>show:</strong> <code>true</code> / <code>false</code><br><br>
+        <strong>ตัวอย่าง:</strong><br>
+        rp | Target | 500000 | #2563EB | dashed | step | true<br>
+        rp | Warning | 700000 | #DC2626 | dotted | step | true<br>
+        ap | Target | 400000 | #7C3AED | dashed | step | true
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="reloadTL()">↺ โหลด Target Lines ใหม่</button>
+      <span id="cfg-tl-msg" style="font-size:10px;margin-left:8px"></span>
+    </div>
+  </div>`;
 }
 
 function savePin(){
-  const v=(document.getElementById('cfg-pin-new').value||'').trim();
-  if(!/^\d{4}$/.test(v)){const m=document.getElementById('cfg-pin-msg');m.style.color='var(--red)';m.textContent='❌ ต้องเป็นตัวเลข 4 หลักเท่านั้น';return;}
-  localStorage.setItem('dash_pin',v);
-  const m=document.getElementById('cfg-pin-msg');m.style.color='var(--green)';m.textContent='✅ บันทึกแล้ว';
-  document.getElementById('cfg-pin-new').value='';
-  setTimeout(()=>{m.textContent='';},2500);
+  const v=(document.getElementById('cfg-pin').value||'').trim();
+  const m=document.getElementById('cfg-pin-msg');
+  if(!/^\d{4}$/.test(v)){m.style.color='var(--red)';m.textContent='ต้องเป็นตัวเลข 4 หลัก';return;}
+  localStorage.setItem('dash_pin',v);m.style.color='var(--green)';m.textContent='บันทึกแล้ว';
+  document.getElementById('cfg-pin').value='';setTimeout(()=>{m.textContent='';},2000);
+}
+async function reloadTL(){
+  await loadTargetLines();
+  const m=document.getElementById('cfg-tl-msg');if(m){m.style.color='var(--green)';m.textContent='โหลดแล้ว';}
+  if(RP.fil.length)renderRPAll();if(AP.fil.length)renderAPAll();
 }
 
-// ══════════════════════════════════════
-// TARGET LINE MANAGER UI
-// ══════════════════════════════════════
-function renderTargetManager(k){
-  const lines=getTargetLines(k);
-  const color=k==='rp'?'var(--blue)':'var(--purple)';
-  const el=document.createElement('div');
-  el.className='tl-manager';
-  el.id=`tl-mgr-${k}`;
-  el.innerHTML=`
-    <div class="tl-hdr" onclick="toggleTLBody('${k}')">
-      <div>
-        <div class="tl-hdr-title" style="color:${color}">🎯 Target Lines — Monthly Chart</div>
-        <div class="tl-hdr-sub">กำหนดเส้นเป้าหมายบนกราฟ Monthly Value ได้ไม่จำกัดเส้น</div>
-      </div>
-      <span class="tl-toggle" id="tl-toggle-${k}">▼</span>
-    </div>
-    <div class="tl-body" id="tl-body-${k}">
-      <div class="tl-list" id="tl-list-${k}"></div>
-      <button class="add-line-btn" onclick="addTargetLine('${k}')">＋ เพิ่มเส้น Target</button>
-    </div>`;
-  renderTLList(k, el.querySelector(`#tl-list-${k}`), lines);
-  return el;
-}
-
-function toggleTLBody(k){
-  const body=document.getElementById(`tl-body-${k}`);
-  const tog=document.getElementById(`tl-toggle-${k}`);
-  const open=body.classList.toggle('open');
-  tog.style.transform=open?'rotate(180deg)':'';
-}
-
-function renderTLList(k, container, lines){
-  container.innerHTML='';
-  lines.forEach((ln,i)=>{
-    const row=document.createElement('div');
-    row.className='tl-row';
-    row.innerHTML=`
-      <input type="color" class="tl-color-input" value="${ln.color}" title="เลือกสี"
-        oninput="updateTLField('${k}',${i},'color',this.value)">
-      <input class="tl-name-input" value="${escHtml(ln.name)}" placeholder="ชื่อเส้น"
-        oninput="updateTLField('${k}',${i},'name',this.value)" title="ชื่อ">
-      <input type="number" class="tl-val-input" value="${ln.val}" placeholder="มูลค่า ฿" min="0"
-        oninput="updateTLField('${k}',${i},'val',parseFloat(this.value)||0)" title="ค่า (฿)">
-      <select class="tl-sel" title="รูปแบบเส้น" onchange="updateTLField('${k}',${i},'dash',this.value)">
-        <option value="solid" ${ln.dash==='solid'?'selected':''}>— ทึบ</option>
-        <option value="dashed" ${ln.dash==='dashed'?'selected':''}>- - ปะ</option>
-        <option value="dotted" ${ln.dash==='dotted'?'selected':''}>··· จุด</option>
-      </select>
-      <select class="tl-sel" title="การต่อเส้น" onchange="updateTLField('${k}',${i},'tension',this.value)">
-        <option value="step" ${ln.tension==='step'?'selected':''}>⌐ หักเหลี่ยม</option>
-        <option value="straight" ${ln.tension==='straight'?'selected':''}>/ ตรง</option>
-        <option value="smooth" ${ln.tension==='smooth'?'selected':''}>~ โค้ง</option>
-      </select>
-      <label class="tl-label-badge" title="แสดง/ซ่อน">
-        <input type="checkbox" ${ln.show!==false?'checked':''} onchange="updateTLField('${k}',${i},'show',this.checked)"> แสดง
-      </label>
-      <button class="btn-danger" onclick="removeTL('${k}',${i})" title="ลบ" style="padding:4px 8px;font-size:12px">✕</button>`;
-    container.appendChild(row);
-  });
-}
-
-function updateTLField(k,i,field,val){
-  const lines=getTargetLines(k);
-  lines[i][field]=val;
-  saveTargetLines(k,lines);
-  refreshMonthlyChart(k);
-}
-function addTargetLine(k){
-  const lines=getTargetLines(k);
-  const palette=['#E65100','#1565C0','#2E7D32','#6A1B9A','#C62828','#00695C','#E53935','#0288D1'];
-  lines.push({id:Date.now(),name:`เส้นที่ ${lines.length+1}`,val:300000,color:palette[lines.length%palette.length],dash:'dashed',tension:'step',show:true});
-  saveTargetLines(k,lines);
-  const cont=document.getElementById(`tl-list-${k}`);
-  if(cont)renderTLList(k,cont,lines);
-  refreshMonthlyChart(k);
-}
-function removeTL(k,i){
-  const lines=getTargetLines(k);
-  lines.splice(i,1);
-  saveTargetLines(k,lines);
-  const cont=document.getElementById(`tl-list-${k}`);
-  if(cont)renderTLList(k,cont,lines);
-  refreshMonthlyChart(k);
-}
-
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // DRAG & DROP / FILE
-// ══════════════════════════════════════
-function dzOver(e,id){e.preventDefault();document.getElementById(id)?.classList.add('drag-over');}
-function dzLeave(id){document.getElementById(id)?.classList.remove('drag-over');}
-function dzDrop(e,k){e.preventDefault();dzLeave(k+'-dz');const f=e.dataTransfer.files[0];if(f)k==='rp'?parseExcelRP(f):parseExcelAP(f);}
-function handleFileRP(inp){if(inp.files[0])parseExcelRP(inp.files[0]);}
-function handleFileAP(inp){if(inp.files[0])parseExcelAP(inp.files[0]);}
+// ═══════════════════════════════════════
+function dzO(e,id){e.preventDefault();document.getElementById(id)?.classList.add('dz');}
+function dzL(id){document.getElementById(id)?.classList.remove('dz');}
+function dzD(e,k){e.preventDefault();dzL(k+'-dz');const f=e.dataTransfer.files[0];if(f)k==='rp'?doXlsxRP(f):doXlsxAP(f);}
+function hFRP(i){if(i.files[0])doXlsxRP(i.files[0]);}
+function hFAP(i){if(i.files[0])doXlsxAP(i.files[0]);}
 
-function parseExcelRP(file){
+function doXlsxRP(file){
   const r=new FileReader();
-  r.onload=e=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-      const wsName=wb.SheetNames.find(n=>n.toLowerCase()==='replan')||wb.SheetNames[0];
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wsName],{defval:''});
-      RP.all=rows.map(rpParseRow).filter(r=>r.val>0||r.jo);
-      RP.src={type:'excel',name:file.name,sheet:wsName};
-      localStorage.setItem('rp_src_type','excel');RP.lastUpdate=new Date();initRP();
-    }catch(err){alert('❌ '+err.message);}
-  };r.readAsArrayBuffer(file);
+  r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});const sn=wb.SheetNames.find(n=>n.toLowerCase()==='replan')||wb.SheetNames[0];const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});RP.all=rows.map(rpRow).filter(r=>r.val>0||r.jo);RP.src={type:'xlsx',name:file.name};localStorage.setItem('rp_src','xlsx');RP.ts=new Date();initRP();}catch(err){alert('Error: '+err.message);}};
+  r.readAsArrayBuffer(file);
 }
-function parseExcelAP(file){
+function doXlsxAP(file){
   const r=new FileReader();
-  r.onload=e=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-      const wsName=wb.SheetNames.find(n=>n.toLowerCase()==='addpaper')||wb.SheetNames[0];
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wsName],{defval:''});
-      AP.all=rows.map(apParseRow).filter(r=>r.val>0||r.jo);
-      AP.src={type:'excel',name:file.name,sheet:wsName};
-      localStorage.setItem('ap_src_type','excel');AP.lastUpdate=new Date();initAP();
-    }catch(err){alert('❌ '+err.message);}
-  };r.readAsArrayBuffer(file);
+  r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});const sn=wb.SheetNames.find(n=>n.toLowerCase()==='addpaper')||wb.SheetNames[0];const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});AP.all=rows.map(apRow).filter(r=>r.val>0||r.jo);AP.src={type:'xlsx',name:file.name};localStorage.setItem('ap_src','xlsx');AP.ts=new Date();initAP();}catch(err){alert('Error: '+err.message);}};
+  r.readAsArrayBuffer(file);
 }
 
-// ── parsers ──
+// ─ parsers ─
 function parseCause(raw){
   if(!raw)return{machine:'OTHER',problem:'OTHER'};
   const c=String(raw).split('\n')[0].trim();
   let m=c.match(/^([^-+]+?)-(.+?)\+\d+/);
-  if(m)return{machine:cm(m[1]),problem:cp(m[2])};
+  if(m)return{machine:cmc(m[1]),problem:cpc(m[2])};
   m=c.match(/^([^+]+)\+\d+/);
-  if(m)return{machine:cm(m[1]),problem:'UNKNOWN'};
-  return{machine:cm(c),problem:'OTHER'};
+  if(m)return{machine:cmc(m[1]),problem:'UNKNOWN'};
+  return{machine:cmc(c),problem:'OTHER'};
 }
-const cm=s=>String(s||'').replace(/[-_+].*$/,'').trim().toUpperCase()||'OTHER';
-const cp=s=>String(s||'').replace(/\+\d+.*$/,'').trim()||'OTHER';
+const cmc=s=>String(s||'').replace(/[-_+].*$/,'').trim().toUpperCase()||'OTHER';
+const cpc=s=>String(s||'').replace(/\+\d+.*$/,'').trim()||'OTHER';
 function getDP(d){
   if(!d)return{yr:0,mo:0};
   if(d instanceof Date&&!isNaN(d))return{yr:d.getFullYear(),mo:d.getMonth()+1};
@@ -706,304 +638,258 @@ function getDP(d){
   if(sep){const ps=s2.split(sep);if(ps.length>=2){const a=parseInt(ps[0]),b=parseInt(ps[1]),c=parseInt(ps[2]||0);if(a>2000)return{yr:a,mo:b};if(c>2000)return{yr:c,mo:b};if(c>0)return{yr:2000+c,mo:b};}}
   const nd=new Date(d);return isNaN(nd)?{yr:0,mo:0}:{yr:nd.getFullYear(),mo:nd.getMonth()+1};
 }
-const nv=v=>parseFloat(String(v).replace(/,/g,''))||0;
+const nv=v=>parseFloat(String(v||'').replace(/,/g,''))||0;
 const sv=v=>String(v||'').trim();
 const kk=(r,k)=>Object.keys(r).find(x=>x.toLowerCase().trim()===k)||Object.keys(r).find(x=>x.toLowerCase().includes(k));
-function rpParseRow(r){
-  const{yr,mo}=getDP(r[kk(r,'date')]||r[kk(r,'plan_date')]||'');
-  const{machine,problem}=parseCause(r[kk(r,'cause')]||'');
-  return{jo:sv(r['JO']||r[kk(r,'jo')]||''),compnt:sv(r[kk(r,'compnt')]||r[kk(r,'component')]||r[kk(r,'code')]||''),machine,problem,val:nv(r[kk(r,'val')]||r[kk(r,'value')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
-}
-function apParseRow(r){
+
+function rpRow(r){
   const{yr,mo}=getDP(r[kk(r,'date')]||'');
-  return{jo:sv(r['JO']||r[kk(r,'jo')]||''),code:sv(r[kk(r,'code')]||''),sh:nv(r[kk(r,'sh')]||0),cause:sv(r[kk(r,'cause')]||'').replace(/\s+/g,' '),dept:sv(r[kk(r,'dept')]||''),facc:sv(r[kk(r,'facc')]||''),val:nv(r[kk(r,'val')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
+  const{machine,problem}=parseCause(r[kk(r,'cause')]||'');
+  const{dept,proc,fac}=mcLookup(machine);
+  return{jo:sv(r['JO']||r[kk(r,'jo')]||''),compnt:sv(r[kk(r,'compnt')]||r[kk(r,'component')]||r[kk(r,'code')]||''),machine,problem,dept,proc,fac,val:nv(r[kk(r,'val')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
+}
+function apRow(r){
+  const{yr,mo}=getDP(r[kk(r,'date')]||'');
+  const dept=sv(r[kk(r,'dept')]||'');
+  const mc=sv(r['MC']||r[kk(r,'mc')]||'');
+  const lkp=mcLookup(mc)||{};
+  return{jo:sv(r['JO']||r[kk(r,'jo')]||''),code:sv(r[kk(r,'code')]||''),sh:nv(r[kk(r,'sh')]||0),cause:sv(r[kk(r,'cause')]||'').replace(/\s+/g,' '),dept:dept||lkp.dept||'OTHER',facc:sv(r[kk(r,'facc')]||''),mc,val:nv(r[kk(r,'val')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
 }
 
-// ══════════════════════════════════════
-// GOOGLE SHEETS
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
+// GOOGLE SHEETS LOADER
+// ═══════════════════════════════════════
 async function loadGS(k){
-  const url=(document.getElementById(`${k}-gs-url`)?.value||document.getElementById('cfg-gs-url')?.value||localStorage.getItem('gs_url')||'').trim();
-  if(!url){alert('กรุณาใส่ Google Sheets URL ครับ');return;}
+  const url=(document.getElementById(`${k}-gsu`)?.value||document.getElementById('cfg-gsu')?.value||localStorage.getItem('gs_url')||'').trim();
+  if(!url){alert('กรุณาใส่ URL ครับ');return;}
   localStorage.setItem('gs_url',url);
-  const progEl=document.getElementById(`${k}-prog`);
-  const fillEl=document.getElementById(`${k}-pfill`);
-  const lblEl=document.getElementById(`${k}-plbl`);
-  const stEl=document.getElementById(`${k}-gs-st`);
-  const cfgSt=document.getElementById(`cfg-${k}-st`);
-  const sheetName=k==='rp'?'Replan':'Addpaper';
-  const setP=(p,msg)=>{if(fillEl)fillEl.style.width=p+'%';if(lblEl)lblEl.textContent=msg;};
-  if(progEl)progEl.style.display='';
-  if(stEl){stEl.className='gs-status loading';stEl.textContent='⏳ กำลังโหลด...';}
-  if(cfgSt){cfgSt.className='gs-status loading';cfgSt.textContent=`⏳ ${k==='rp'?'RP':'AP'}...`;}
-  setP(5,'เชื่อมต่อ...');
+  const pEl=document.getElementById(`${k}-prog`),pfEl=document.getElementById(`${k}-pf`),plEl=document.getElementById(`${k}-pl`);
+  const stEl=document.getElementById(`${k}-st`),cfgSt=document.getElementById(`cfg-${k}-st`);
+  const sn=k==='rp'?'Replan':'Addpaper';
+  const sp=(p,m)=>{if(pfEl)pfEl.style.width=p+'%';if(plEl)plEl.textContent=m;};
+  if(pEl)pEl.style.display='';
+  if(stEl){stEl.className='gs-st ld';stEl.textContent='กำลังโหลด...';}
+  sp(5,'เชื่อมต่อ...');
   try{
-    let allRows=[],headers=[],page=0,totalRows=Infinity;
-    while(allRows.length<totalRows){
-      const res=await Promise.race([
-        fetch(`${url}?sheet=${encodeURIComponent(sheetName)}&page=${page}`),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout')),25000))
-      ]);
-      const d=await res.json();
-      const raw=d.data||[];if(!raw.length)break;
-      if(page===0){headers=raw[0];totalRows=d.totalRows||raw.length-1;}
-      const slice=page===0?raw.slice(1):raw;
-      const parsed=slice.map(row=>{const o={};headers.forEach((h,i)=>{o[String(h)]=row[i]??'';});return o;});
-      allRows=allRows.concat(parsed);
-      const pct=Math.min(10+allRows.length/Math.max(totalRows,1)*80,90);
-      setP(Math.round(pct),`${allRows.length.toLocaleString()} / ${totalRows.toLocaleString()} แถว`);
-      if(allRows.length>=totalRows||slice.length<(d.pageSize||5000))break;
-      page++;
+    let all=[],hdrs=[],pg=0,tot=Infinity;
+    while(all.length<tot){
+      const res=await Promise.race([fetch(`${url}?sheet=${encodeURIComponent(sn)}&page=${pg}`),new Promise((_,rj)=>setTimeout(()=>rj(new Error('Timeout')),25000))]);
+      const d=await res.json();const raw=d.data||[];if(!raw.length)break;
+      if(pg===0){hdrs=raw[0];tot=d.totalRows||raw.length-1;}
+      const sl=pg===0?raw.slice(1):raw;
+      all=all.concat(sl.map(row=>{const o={};hdrs.forEach((h,i)=>{o[String(h)]=row[i]??'';});return o;}));
+      sp(Math.round(Math.min(10+all.length/Math.max(tot,1)*80,90)),`${all.length.toLocaleString()}/${tot.toLocaleString()}`);
+      if(all.length>=tot||sl.length<(d.pageSize||5000))break;pg++;
     }
-    setP(100,'✅ สำเร็จ!');
-    if(k==='rp'){RP.all=allRows.map(rpParseRow).filter(r=>r.val>0||r.jo);RP.src={type:'gs',sheet:sheetName,url};RP.lastUpdate=new Date();localStorage.setItem('rp_src_type','gs');initRP();}
-    else{AP.all=allRows.map(apParseRow).filter(r=>r.val>0||r.jo);AP.src={type:'gs',sheet:sheetName,url};AP.lastUpdate=new Date();localStorage.setItem('ap_src_type','gs');initAP();}
-    if(stEl){stEl.className='gs-status ok';stEl.textContent=`✅ ${allRows.length.toLocaleString()} แถว`;}
-    if(cfgSt){cfgSt.className='gs-status ok';cfgSt.textContent=`✅ ${k==='rp'?'RP':'AP'}: ${allRows.length.toLocaleString()}`;}
-    setTimeout(()=>{if(progEl)progEl.style.display='none';},1500);
+    sp(100,'สำเร็จ');
+    if(k==='rp'){RP.all=all.map(rpRow).filter(r=>r.val>0||r.jo);RP.src={type:'gs',sheet:sn,url};RP.ts=new Date();localStorage.setItem('rp_src','gs');initRP();}
+    else{AP.all=all.map(apRow).filter(r=>r.val>0||r.jo);AP.src={type:'gs',sheet:sn,url};AP.ts=new Date();localStorage.setItem('ap_src','gs');initAP();}
+    if(stEl){stEl.className='gs-st ok';stEl.textContent=`โหลดแล้ว ${all.length.toLocaleString()} แถว (${sn})`;}
+    if(cfgSt){cfgSt.style.color='var(--green)';cfgSt.textContent=`${k==='rp'?'RP':'AP'}: ${all.length.toLocaleString()} แถว`;}
+    setTimeout(()=>{if(pEl)pEl.style.display='none';},1200);
   }catch(err){
-    if(progEl)progEl.style.display='none';
-    if(stEl){stEl.className='gs-status err';stEl.textContent=`❌ ${err.message}`;}
-    if(cfgSt){cfgSt.className='gs-status err';cfgSt.textContent=`❌ ${err.message}`;}
-    alert(`โหลดไม่สำเร็จ: ${err.message}\n\n💡 ตรวจสอบ:\n• Apps Script Deploy เป็น "Anyone"\n• Sheet ชื่อ "${sheetName}" ถูกต้อง`);
+    if(pEl)pEl.style.display='none';
+    if(stEl){stEl.className='gs-st err';stEl.textContent='โหลดไม่สำเร็จ: '+err.message;}
+    if(cfgSt){cfgSt.style.color='var(--red)';cfgSt.textContent='Error: '+err.message;}
+    alert(`โหลดไม่สำเร็จ: ${err.message}\n\nตรวจสอบ:\n• Apps Script Deploy เป็น Anyone\n• Sheet ชื่อ "${sn}" ถูกต้อง`);
   }
 }
-async function autoLoadGS(k,url){const el=document.getElementById(`${k}-gs-url`);if(el)el.value=url;await loadGS(k);}
+async function autoGS(k,url){const el=document.getElementById(`${k}-gsu`);if(el)el.value=url;await loadGS(k);}
 function refreshRP(){if(RP.src?.type==='gs')loadGS('rp');else alert('ลากไฟล์ Excel ใหม่เพื่ออัปเดตครับ');}
 function refreshAP(){if(AP.src?.type==='gs')loadGS('ap');else alert('ลากไฟล์ Excel ใหม่เพื่ออัปเดตครับ');}
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // REPLAN INIT & FILTER
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 function initRP(){
   document.getElementById('rp-nodata').style.display='none';
   document.getElementById('rp-setup').style.display='none';
-  document.getElementById('rp-data').style.display='';
-  const src=RP.src;
-  const lbl=document.getElementById('rp-src-label');
-  if(lbl)lbl.innerHTML=src?.type==='gs'?`<span style="color:var(--green);font-size:11px">🔗 GS: ${src.sheet}</span>`:`<span style="color:var(--blue);font-size:11px">📂 ${src?.name||'Excel'}</span>`;
-  const lu=document.getElementById('rp-last-update');
-  if(lu&&RP.lastUpdate)lu.textContent=RP.lastUpdate.toLocaleTimeString('th-TH');
-  buildSelRP();rpFilter();updateStatus();
+  document.getElementById('rp-live').style.display='';
+  const src=document.getElementById('rp-src');
+  src.innerHTML=RP.src?.type==='gs'?`<span style="color:var(--green);font-size:10px">GS: ${RP.src.sheet}</span>`:`<span style="color:var(--blue);font-size:10px">${RP.src?.name||'Excel'}</span>`;
+  const ts=document.getElementById('rp-ts');if(ts&&RP.ts)ts.textContent=RP.ts.toLocaleTimeString('th-TH');
+  buildSelRP();rpF();updStatus();
 }
-function fillSel(id,vals,allLabel,fmt2){
-  const el=document.getElementById(id);if(!el)return;
-  const cur=el.value;
-  el.innerHTML=`<option value="">— ${allLabel} —</option>`+vals.map(v=>`<option>${fmt2?fmt2(v):v}</option>`).join('');
+function fSel(id,vals,all,fmt2){
+  const el=document.getElementById(id);if(!el)return;const cur=el.value;
+  el.innerHTML=`<option value="">— ${all} —</option>`+vals.map(v=>`<option>${fmt2?fmt2(v):v}</option>`).join('');
   if([...el.options].some(o=>o.value===cur))el.value=cur;
 }
 function buildSelRP(){
-  const yrs=[...new Set(RP.all.map(r=>r.yr).filter(Boolean))].sort();
-  const mos=[...new Set(RP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b);
-  const mcs=[...new Set(RP.all.map(r=>r.machine).filter(m=>m&&m!=='OTHER'))].sort();
-  const pbs=[...new Set(RP.all.map(r=>r.problem).filter(p=>p&&!['OTHER','UNKNOWN'].includes(p)))].sort();
-  fillSel('rp-fy',yrs,'ทุกปี');fillSel('rp-fm',mos,'ทุกเดือน',m=>MN[m]);
-  fillSel('rp-fmc',mcs.slice(0,40),'ทุกเครื่อง');fillSel('rp-fpb',pbs.slice(0,40),'ทุกปัญหา');
+  fSel('rp-fy',[...new Set(RP.all.map(r=>r.yr).filter(Boolean))].sort(),'ทุกปี');
+  fSel('rp-fm',[...new Set(RP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b),'ทุกเดือน',m=>MN[m]);
+  fSel('rp-fmc',[...new Set(RP.all.map(r=>r.machine).filter(m=>m&&m!=='OTHER'))].sort(),'ทุกเครื่อง');
+  fSel('rp-fpb',[...new Set(RP.all.map(r=>r.problem).filter(p=>p&&!['OTHER','UNKNOWN'].includes(p)))].sort(),'ทุกปัญหา');
+  fSel('rp-fd',[...new Set(RP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort(),'ทุกแผนก');
+  fSel('rp-ff',[...new Set(RP.all.map(r=>r.fac).filter(f=>f&&f!=='OTHER'))].sort(),'ทุกโรงงาน');
 }
-function rpFilter(){
+function rpF(){
   const y=document.getElementById('rp-fy').value,m=document.getElementById('rp-fm').value;
   const mc=document.getElementById('rp-fmc').value,pb=document.getElementById('rp-fpb').value;
-  RP.fil=RP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(mc&&r.machine!==mc)return false;if(pb&&r.problem!==pb)return false;return true;});
-  RP.pg=0;RP.search='';const si=document.getElementById('rp-search');if(si)si.value='';
-  renderRPChips();renderRPAll();
+  const fd=document.getElementById('rp-fd').value,ff=document.getElementById('rp-ff').value;
+  RP.fil=RP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(mc&&r.machine!==mc)return false;if(pb&&r.problem!==pb)return false;if(fd&&r.dept!==fd)return false;if(ff&&r.fac!==ff)return false;return true;});
+  RP.pg=0;RP.q='';const si=document.getElementById('rp-si2');if(si)si.value='';
+  rpChips();renderRPAll();
 }
-function rpReset(){['rp-fy','rp-fm','rp-fmc','rp-fpb'].forEach(id=>document.getElementById(id).value='');rpFilter();}
-function renderRPChips(){
-  const y=document.getElementById('rp-fy').value,m=document.getElementById('rp-fm').value;
-  const mc=document.getElementById('rp-fmc').value,pb=document.getElementById('rp-fpb').value;
+function rpRst(){['rp-fy','rp-fm','rp-fmc','rp-fpb','rp-fd','rp-ff'].forEach(id=>document.getElementById(id).value='');rpF();}
+function rpChips(){
+  const vals={y:document.getElementById('rp-fy').value,m:document.getElementById('rp-fm').value,mc:document.getElementById('rp-fmc').value,pb:document.getElementById('rp-fpb').value,fd:document.getElementById('rp-fd').value,ff:document.getElementById('rp-ff').value};
   const chips=[];
-  if(y)chips.push([`ปี ${y}`,"document.getElementById('rp-fy').value='';rpFilter()"]);
-  if(m)chips.push([MN[parseInt(m)],"document.getElementById('rp-fm').value='';rpFilter()"]);
-  if(mc)chips.push([`🔧 ${mc}`,"document.getElementById('rp-fmc').value='';rpFilter()"]);
-  if(pb)chips.push([`⚠ ${pb}`,"document.getElementById('rp-fpb').value='';rpFilter()"]);
+  if(vals.y)chips.push([`ปี ${vals.y}`,"document.getElementById('rp-fy').value='';rpF()"]);
+  if(vals.m)chips.push([MN[parseInt(vals.m)],"document.getElementById('rp-fm').value='';rpF()"]);
+  if(vals.mc)chips.push([vals.mc,"document.getElementById('rp-fmc').value='';rpF()"]);
+  if(vals.pb)chips.push([vals.pb,"document.getElementById('rp-fpb').value='';rpF()"]);
+  if(vals.fd)chips.push([vals.fd,"document.getElementById('rp-fd').value='';rpF()"]);
+  if(vals.ff)chips.push([vals.ff,"document.getElementById('rp-ff').value='';rpF()"]);
   document.getElementById('rp-chips').innerHTML=chips.map(([l,fn])=>`<span class="chip">${l}<span class="chip-x" onclick="${fn}">×</span></span>`).join('');
 }
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // REPLAN RENDER
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 function renderRPAll(){
   const con=document.getElementById('rp-content');
   const d=RP.fil;
   if(!d.length){con.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">ไม่พบข้อมูล</div><div class="empty-s">ลองเปลี่ยน filter</div></div>';return;}
   con.innerHTML='';
 
-  const lines=getTargetLines('rp');
-  const firstLine=lines.find(l=>l.show!==false);
-  const target=firstLine?firstLine.val:0;
+  const tlines=TL.rp.filter(l=>l.show!==false);
+  const firstTgt=tlines[0]?.val||0;
   const tv=d.reduce((a,r)=>a+r.val,0);
   const ni=d.filter(r=>r.check===0);
   const h5k=d.filter(r=>r.val>=5000);
-  const months=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
-  const avgMo=months.length?tv/months.length:tv;
-  const pct=target?avgMo/target*100:null;
-  const topPG={};d.forEach(r=>{if(r.problem&&r.problem!=='OTHER')topPG[r.problem]=(topPG[r.problem]||0)+r.val;});
+  const mos=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
+  const avg=mos.length?tv/mos.length:tv;
+  const pct=firstTgt?avg/firstTgt*100:null;
+  const topPG={};d.forEach(r=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))topPG[r.problem]=(topPG[r.problem]||0)+r.val;});
   const topP=Object.entries(topPG).sort((a,b)=>b[1]-a[1])[0];
 
-  const kDiv=mkEl('div','kpi-grid');
+  // KPIs
+  const kDiv=mkEl('div','kpi-row');
   kDiv.innerHTML=[
-    {l:'มูลค่า Replan รวม',v:fB(tv)+' ฿',c:'var(--blue)',sub:`avg ${fB(avgMo)} ฿/เดือน`,
-     badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน Target +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'b-pass':'b-fail'):''},
-    {l:'จำนวน Job',v:fmt(d.length)+' งาน',c:'#0277BD',sub:`เฉลี่ย ${fB(d.length?tv/d.length:0)} ฿/งาน`},
-    {l:'Job ≥ 5,000 ฿',v:fmt(h5k.length)+' งาน',c:'var(--red)',sub:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'b-fail'},
-    {l:'ยังไม่คุยที่ประชุม',v:fmt(ni.length)+' งาน',c:'var(--orange)',sub:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'ต้องนำเข้าประชุม':'ครบทุกรายการ',bc:ni.length?'b-warn':'b-pass'},
-    {l:'ค่าเฉลี่ยต่อเดือน',v:fB(avgMo)+' ฿',c:'#4527A0',sub:`${months.length} เดือน`},
-    {l:'ปัญหาหลัก',v:topP?topP[0]:'—',c:'var(--teal)',sub:topP?`${fB(topP[1])} ฿`:'',badge:'Pareto #1',bc:'b-info'},
-  ].map(k=>kpiHtml(k)).join('');
+    {l:'มูลค่า Replan รวม',v:fB(tv)+' ฿',s:`avg ${fB(avg)} ฿/เดือน`,badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
+    {l:'จำนวน Job',v:f(d.length)+' งาน',s:`เฉลี่ย ${fB(tv/d.length||0)} ฿/งาน`},
+    {l:'Job ≥ 5,000 ฿',v:f(h5k.length)+' งาน',s:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
+    {l:'ยังไม่คุยที่ประชุม',v:f(ni.length)+' งาน',s:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'รอนำเข้าประชุม':'ครบ',bc:ni.length?'warn':'ok'},
+    {l:'เฉลี่ยต่อเดือน',v:fB(avg)+' ฿',s:`${mos.length} เดือน`},
+    {l:'ปัญหาหลัก',v:topP?topP[0]:'—',s:topP?`${fB(topP[1])} ฿`:'',badge:'#1',bc:'info'},
+  ].map(k=>`<div class="kpi"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
   con.appendChild(kDiv);
 
-  // Target Manager
-  con.appendChild(renderTargetManager('rp'));
-  toggleTLBody('rp'); // open by default
+  // Target Accordion
+  con.appendChild(buildTLAccordion('rp'));
 
-  // Charts
-  mkSH(con,'📈','Monthly Value & Machine','แนวโน้มรายเดือนพร้อม Target Lines');
-  const r1=mkEl('div','charts-2');con.appendChild(r1);
-  const mC=mkCard2('📅 Monthly Value (฿)',`<div style="height:250px"><canvas id="rpMonthly"></canvas></div>`);r1.appendChild(mC);
-  const mcC=mkCard2('🔧 Top Machines',`<div style="height:250px"><canvas id="rpMachine"></canvas></div>`);r1.appendChild(mcC);
+  // Charts row 1: Monthly + Machine
+  sh(con,'Monthly Value & Machine');
+  const r1=mkEl('div','g2');con.appendChild(r1);
+  r1.appendChild(mkCd('📅 Monthly Value (฿)','','<div style="height:240px"><canvas id="rpMo"></canvas></div>'));
+  r1.appendChild(mkCd('🔧 Top Machines','ตามมูลค่า','<div style="height:240px"><canvas id="rpMC"></canvas></div>'));
 
-  mkSH(con,'📊','Pareto Analysis','80/20');
-  const r2=mkEl('div','charts-2');con.appendChild(r2);
-  r2.appendChild(mkCard2('⚠ Pareto — Problem',`<div id="rp-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpPareto1"></canvas></div>`));
-  r2.appendChild(mkCard2('🔧 Pareto — Machine',`<div id="rp-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpPareto2"></canvas></div>`));
+  // Charts row 2: Dept + Factory
+  sh(con,'รายแผนก / โรงงาน');
+  const r2=mkEl('div','g2');con.appendChild(r2);
+  r2.appendChild(mkCd('🏢 มูลค่าตาม Department','','<div style="height:240px"><canvas id="rpDept"></canvas></div>'));
+  r2.appendChild(mkCd('🏭 มูลค่าตาม Factory','','<div style="height:240px"><canvas id="rpFac"></canvas></div>'));
 
-  mkSH(con,'🏆','Product Ranking','Top 15');
-  const prC=mkCard('📦 Top 15 Products','ตามมูลค่า','rp-pr-badge');prC.querySelector('.card-body').innerHTML='<div style="height:320px"><canvas id="rpProduct"></canvas></div>';con.appendChild(prC);
+  // Pareto
+  sh(con,'Pareto Analysis');
+  const r3=mkEl('div','g2');con.appendChild(r3);
+  r3.appendChild(mkCd('⚠ Pareto — Problem','Top 10 ตามมูลค่า','<div id="rp-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP1"></canvas></div>'));
+  r3.appendChild(mkCd('🔧 Pareto — Machine','Top 10 ตามมูลค่า','<div id="rp-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP2"></canvas></div>'));
+
+  // Product
+  sh(con,'Product Ranking');
+  const prC=mkCdB('📦 Top 15 Products','','rp-pb','<div style="height:300px"><canvas id="rpProd"></canvas></div>');con.appendChild(prC);
 
   // Table
-  mkSH(con,'📋','รายละเอียด',`${RP.fil.length.toLocaleString()} รายการ`,'rp-tbl-sub');
-  const tC=mkCard('รายการทั้งหมด','');tC.querySelector('.card-body').remove();
-  tC.innerHTML+=`
-    <div class="search-bar">
-      <input type="text" class="search-input" id="rp-search" placeholder="🔍 ค้นหา JO, สินค้า, Machine, Problem..." oninput="rpSrch()">
-      <div class="search-ct" id="rp-sct"></div>
-    </div>
-    <div class="tbl-scroll"><table>
+  sh(con,'รายละเอียด',`${d.length.toLocaleString()} รายการ`,'rp-tsub');
+  const tC=mkEl('div','card');
+  tC.innerHTML=`
+    <div class="sbar"><input type="text" class="si" id="rp-si2" placeholder="ค้นหา JO, สินค้า, Machine, Problem..." oninput="rpSrch()"><div class="sct" id="rp-sc"></div></div>
+    <div class="tscroll"><table>
       <thead><tr>
-        <th onclick="rpSortBy('jo')">JO</th><th onclick="rpSortBy('compnt')">สินค้า</th>
-        <th onclick="rpSortBy('machine')">Machine</th><th onclick="rpSortBy('problem')">Problem</th>
-        <th onclick="rpSortBy('mo')">เดือน</th><th onclick="rpSortBy('val')" class="sd">มูลค่า (฿)</th>
-        <th>สถานะ</th>
+        <th onclick="rpSort('jo')">JO</th><th onclick="rpSort('compnt')">สินค้า</th>
+        <th onclick="rpSort('machine')">Machine</th><th onclick="rpSort('problem')">Problem</th>
+        <th onclick="rpSort('dept')">Dept</th><th onclick="rpSort('fac')">Factory</th>
+        <th onclick="rpSort('mo')">เดือน</th><th onclick="rpSort('val')" class="sd">มูลค่า (฿)</th><th>สถานะ</th>
       </tr></thead>
-      <tbody id="rp-tbody"></tbody>
-      <tfoot><tr id="rp-tfoot"></tr></tfoot>
+      <tbody id="rp-tb"></tbody>
+      <tfoot><tr id="rp-tf"></tr></tfoot>
     </table></div>
-    <div class="pg" id="rp-pg"></div>`;
+    <div class="pgn" id="rp-pg"></div>`;
   con.appendChild(tC);
 
-  requestAnimationFrame(()=>{buildRPCharts(d,months);rpRenderTable();});
+  requestAnimationFrame(()=>{buildRPCharts(d,mos);rpTbl();});
 }
 
-// ══════════════════════════════════════
-// REPLAN CHARTS
-// ══════════════════════════════════════
-function buildTargetDatasets(k, nPts){
-  const lines=getTargetLines(k);
-  return lines.filter(l=>l.show!==false).map(ln=>{
-    const dashArr=ln.dash==='dashed'?[8,5]:ln.dash==='dotted'?[2,4]:[];
-    const tension=ln.tension==='smooth'?.4:0;
-    const stepped=ln.tension==='step'?true:false;
-    return{
-      label:ln.name||'Target',
-      data:Array(nPts).fill(ln.val),
-      type:'line',
-      borderColor:ln.color,
-      borderWidth:2,
-      borderDash:dashArr,
-      pointRadius:0,
-      fill:false,
-      tension,
-      stepped,
-      yAxisID:'y',
-      order:0,
-    };
-  });
-}
-
-function refreshMonthlyChart(k){
-  // re-build only monthly chart with updated lines
-  const d=k==='rp'?RP.fil:AP.fil;
-  if(!d.length)return;
-  const mo={};
-  d.forEach(r=>{if(r.yr&&r.mo){const key=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[key]=(mo[key]||0)+r.val;}});
-  const mK=Object.keys(mo).sort(),mV=mK.map(key=>mo[key]);
-  const mL=mK.map(key=>{const[y,m]=key.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
-  const tl=buildTargetDatasets(k,mK.length);
-  const barColor=k==='rp'?'rgba(21,101,192,.82)':'rgba(106,27,154,.82)';
-  const cid=k==='rp'?'rpMonthly':'apMonthly';
-  dc(k==='rp'?'rpM':'apM');
-  const ds=[{label:'฿',data:mV,backgroundColor:mV.map(v=>{
-    const over=tl.filter(l=>v>l.data[0]);
-    return over.length?'rgba(198,40,40,.82)':barColor;
-  }),borderRadius:5,order:2},...tl];
-  charts[k==='rp'?'rpM':'apM']=new Chart(document.getElementById(cid),{type:'bar',data:{labels:mL,datasets:ds},options:moChartOpts()});
-}
-
-function buildRPCharts(d,months){
-  // Monthly with target lines
-  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k2=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k2]=(mo[k2]||0)+r.val;}});
-  const mK=Object.keys(mo).sort(),mV=mK.map(k2=>mo[k2]);
-  const mL=mK.map(k2=>{const[y,m]=k2.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
-  const tl=buildTargetDatasets('rp',mK.length);
+function buildRPCharts(d,mos){
+  // Monthly
+  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k]=(mo[k]||0)+r.val;}});
+  const mK=Object.keys(mo).sort(),mV=mK.map(k=>mo[k]);
+  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
+  const tds=buildTDS('rp',mK.length);
   dc('rpM');
-  const ds=[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tl.filter(l=>v>l.data[0]);return ov.length?'rgba(198,40,40,.82)':'rgba(21,101,192,.82)';}),borderRadius:5,order:2},...tl];
-  charts['rpM']=new Chart(document.getElementById('rpMonthly'),{type:'bar',data:{labels:mL,datasets:ds},options:moChartOpts()});
+  CHS['rpM']=new Chart(document.getElementById('rpMo'),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#2563EB';}),borderRadius:4,order:2},...tds]},options:moOpts()});
 
   // Machine
   const mcG={};d.forEach(r=>{if(r.machine&&r.machine!=='OTHER')mcG[r.machine]=(mcG[r.machine]||0)+r.val;});
   const mcS=Object.entries(mcG).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  dc('rpMC');charts['rpMC']=new Chart(document.getElementById('rpMachine'),{type:'bar',data:{labels:mcS.map(x=>x[0]),datasets:[{data:mcS.map(x=>x[1]),backgroundColor:C_BLUE.slice(0,mcS.length),borderRadius:4}]},options:hChartOpts()});
+  dc('rpMC');CHS['rpMC']=new Chart(document.getElementById('rpMC'),{type:'bar',data:{labels:mcS.map(x=>x[0]),datasets:[{data:mcS.map(x=>x[1]),backgroundColor:'#2563EB',borderRadius:3}]},options:hOpts()});
+
+  // Dept chart
+  const dG={};d.forEach(r=>{if(r.dept&&r.dept!=='OTHER')dG[r.dept]=(dG[r.dept]||0)+r.val;});
+  const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
+  dc('rpDept');CHS['rpDept']=new Chart(document.getElementById('rpDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:'#3B82F6',borderRadius:3}]},options:hOpts()});
+
+  // Factory chart
+  const fG={};d.forEach(r=>{if(r.fac&&r.fac!=='OTHER')fG[r.fac]=(fG[r.fac]||0)+r.val;});
+  const fS=Object.entries(fG).sort((a,b)=>b[1]-a[1]);
+  dc('rpFac');CHS['rpFac']=new Chart(document.getElementById('rpFac'),{type:'bar',data:{labels:fS.map(x=>x[0]),datasets:[{data:fS.map(x=>x[1]),backgroundColor:'#60A5FA',borderRadius:3}]},options:hOpts()});
 
   // Pareto
-  const pbG={};d.forEach(r=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))pbG[r.problem]=(pbG[r.problem]||0)+r.val;});
-  buildPareto('rpPareto1','rp-pi1',pbG);
-  buildPareto('rpPareto2','rp-pi2',mcG);
+  buildPareto('rpP1','rp-pi1',Object.fromEntries(Object.entries(d.reduce((a,r)=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))a[r.problem]=(a[r.problem]||0)+r.val;return a;},{}))));
+  buildPareto('rpP2','rp-pi2',mcG);
 
   // Product
   const pG={};d.forEach(r=>{if(r.compnt)pG[r.compnt]=(pG[r.compnt]||0)+r.val;});
   const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const pb=document.getElementById('rp-pr-badge');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('rpProd');charts['rpProd']=new Chart(document.getElementById('rpProduct'),{type:'bar',data:{labels:pS.map(x=>x[0].length>30?x[0].slice(0,29)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map((_,i)=>`hsla(${210+i*11},65%,${50-i*1.5}%,.85)`),borderRadius:4}]},options:{...hChartOpts(),layout:{padding:{right:70}}}});
+  const pb=document.getElementById('rp-pb');if(pb)pb.textContent=`Top ${pS.length}`;
+  dc('rpProd');CHS['rpProd']=new Chart(document.getElementById('rpProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:'#1D4ED8',borderRadius:3}]},options:{...hOpts(),layout:{padding:{right:60}}}});
 }
 
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 // ADD PAPER
-// ══════════════════════════════════════
+// ═══════════════════════════════════════
 function initAP(){
   document.getElementById('ap-nodata').style.display='none';
   document.getElementById('ap-setup').style.display='none';
-  document.getElementById('ap-data').style.display='';
-  const src=AP.src;
-  const lbl=document.getElementById('ap-src-label');
-  if(lbl)lbl.innerHTML=src?.type==='gs'?`<span style="color:var(--green);font-size:11px">🔗 GS: ${src.sheet}</span>`:`<span style="color:var(--purple);font-size:11px">📂 ${src?.name||'Excel'}</span>`;
-  const lu=document.getElementById('ap-last-update');
-  if(lu&&AP.lastUpdate)lu.textContent=AP.lastUpdate.toLocaleTimeString('th-TH');
-  buildSelAP();apFilter();updateStatus();
+  document.getElementById('ap-live').style.display='';
+  const src=document.getElementById('ap-src');
+  src.innerHTML=AP.src?.type==='gs'?`<span style="color:var(--green);font-size:10px">GS: ${AP.src.sheet}</span>`:`<span style="color:var(--blue);font-size:10px">${AP.src?.name||'Excel'}</span>`;
+  const ts=document.getElementById('ap-ts');if(ts&&AP.ts)ts.textContent=AP.ts.toLocaleTimeString('th-TH');
+  buildSelAP();apF();updStatus();
 }
 function buildSelAP(){
-  const yrs=[...new Set(AP.all.map(r=>r.yr).filter(Boolean))].sort();
-  const mos=[...new Set(AP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b);
-  const dpts=[...new Set(AP.all.map(r=>r.dept).filter(Boolean))].sort();
-  const fcs=[...new Set(AP.all.map(r=>r.facc).filter(Boolean))].sort();
-  fillSel('ap-fy',yrs,'ทุกปี');fillSel('ap-fm',mos,'ทุกเดือน',m=>MN[m]);
-  fillSel('ap-fd',dpts,'ทุกแผนก');fillSel('ap-ff',fcs,'ทุกโรงงาน');
+  fSel('ap-fy',[...new Set(AP.all.map(r=>r.yr).filter(Boolean))].sort(),'ทุกปี');
+  fSel('ap-fm',[...new Set(AP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b),'ทุกเดือน',m=>MN[m]);
+  fSel('ap-fd',[...new Set(AP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort(),'ทุกแผนก');
+  fSel('ap-ff',[...new Set(AP.all.map(r=>r.facc||r.fac).filter(f=>f&&f!=='OTHER'))].sort(),'ทุกโรงงาน');
 }
-function apFilter(){
+function apF(){
   const y=document.getElementById('ap-fy').value,m=document.getElementById('ap-fm').value;
-  const dp=document.getElementById('ap-fd').value,fc=document.getElementById('ap-ff').value;
-  AP.fil=AP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(dp&&r.dept!==dp)return false;if(fc&&r.facc!==fc)return false;return true;});
-  AP.pg=0;AP.search='';const si=document.getElementById('ap-search');if(si)si.value='';
-  renderAPChips();renderAPAll();
+  const fd=document.getElementById('ap-fd').value,ff=document.getElementById('ap-ff').value;
+  AP.fil=AP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(fd&&r.dept!==fd)return false;if(ff&&(r.facc||r.fac)!==ff)return false;return true;});
+  AP.pg=0;AP.q='';
+  apChips();renderAPAll();
 }
-function apReset(){['ap-fy','ap-fm','ap-fd','ap-ff'].forEach(id=>document.getElementById(id).value='');apFilter();}
-function renderAPChips(){
-  const y=document.getElementById('ap-fy').value,m=document.getElementById('ap-fm').value;
-  const dp=document.getElementById('ap-fd').value,fc=document.getElementById('ap-ff').value;
+function apRst(){['ap-fy','ap-fm','ap-fd','ap-ff'].forEach(id=>document.getElementById(id).value='');apF();}
+function apChips(){
+  const vals={y:document.getElementById('ap-fy').value,m:document.getElementById('ap-fm').value,fd:document.getElementById('ap-fd').value,ff:document.getElementById('ap-ff').value};
   const chips=[];
-  if(y)chips.push([`ปี ${y}`,"document.getElementById('ap-fy').value='';apFilter()"]);
-  if(m)chips.push([MN[parseInt(m)],"document.getElementById('ap-fm').value='';apFilter()"]);
-  if(dp)chips.push([`📦 ${dp}`,"document.getElementById('ap-fd').value='';apFilter()"]);
-  if(fc)chips.push([`🏭 ${fc}`,"document.getElementById('ap-ff').value='';apFilter()"]);
+  if(vals.y)chips.push([`ปี ${vals.y}`,"document.getElementById('ap-fy').value='';apF()"]);
+  if(vals.m)chips.push([MN[parseInt(vals.m)],"document.getElementById('ap-fm').value='';apF()"]);
+  if(vals.fd)chips.push([vals.fd,"document.getElementById('ap-fd').value='';apF()"]);
+  if(vals.ff)chips.push([vals.ff,"document.getElementById('ap-ff').value='';apF()"]);
   document.getElementById('ap-chips').innerHTML=chips.map(([l,fn])=>`<span class="chip">${l}<span class="chip-x" onclick="${fn}">×</span></span>`).join('');
 }
 
@@ -1013,196 +899,294 @@ function renderAPAll(){
   if(!d.length){con.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">ไม่พบข้อมูล</div><div class="empty-s">ลองเปลี่ยน filter</div></div>';return;}
   con.innerHTML='';
 
-  const lines=getTargetLines('ap');
-  const firstLine=lines.find(l=>l.show!==false);
-  const target=firstLine?firstLine.val:0;
+  const tlines=TL.ap.filter(l=>l.show!==false);
+  const firstTgt=tlines[0]?.val||0;
   const tv=d.reduce((a,r)=>a+r.val,0);
   const tSh=d.reduce((a,r)=>a+r.sh,0);
   const ni=d.filter(r=>r.check===0);
   const h5k=d.filter(r=>r.val>=5000);
-  const months=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
-  const avgMo=months.length?tv/months.length:tv;
-  const pct=target?avgMo/target*100:null;
-  const dg={};d.forEach(r=>{if(r.dept)dg[r.dept]=(dg[r.dept]||0)+r.val;});
-  const topD=Object.entries(dg).sort((a,b)=>b[1]-a[1])[0];
+  const mos=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
+  const avg=mos.length?tv/mos.length:tv;
+  const pct=firstTgt?avg/firstTgt*100:null;
+  const dG={};d.forEach(r=>{if(r.dept)dG[r.dept]=(dG[r.dept]||0)+r.val;});
+  const topD=Object.entries(dG).sort((a,b)=>b[1]-a[1])[0];
 
-  const kDiv=mkEl('div','kpi-grid');
+  const kDiv=mkEl('div','kpi-row');
   kDiv.innerHTML=[
-    {l:'มูลค่า Add Paper รวม',v:fB(tv)+' ฿',c:'var(--purple)',sub:`avg ${fB(avgMo)} ฿/เดือน`,
-     badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน Target +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'b-pass':'b-fail'):''},
-    {l:'จำนวนแผ่นรวม',v:fmt(tSh)+' แผ่น',c:'#1565C0',sub:`avg ${fmt(d.length?Math.round(tSh/d.length):0)} แผ่น/job`},
-    {l:'จำนวน Job',v:fmt(d.length)+' งาน',c:'#0277BD',sub:`เฉลี่ย ${fB(d.length?tv/d.length:0)} ฿/งาน`},
-    {l:'Job ≥ 5,000 ฿',v:fmt(h5k.length)+' งาน',c:'var(--red)',sub:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'b-fail'},
-    {l:'ยังไม่คุยที่ประชุม',v:fmt(ni.length)+' งาน',c:'var(--orange)',sub:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'ต้องนำเข้าประชุม':'ครบแล้ว',bc:ni.length?'b-warn':'b-pass'},
-    {l:'แผนกใช้สูงสุด',v:topD?topD[0]:'—',c:'var(--teal)',sub:topD?`${fB(topD[1])} ฿`:'',badge:'Top Dept',bc:'b-info'},
-  ].map(k=>kpiHtml(k)).join('');
+    {l:'มูลค่า Add Paper รวม',v:fB(tv)+' ฿',s:`avg ${fB(avg)} ฿/เดือน`,badge:pct!==null?(pct<=100?`✓ ต่ำกว่า Target ${(100-pct).toFixed(1)}%`:`⚠ เกิน +${(pct-100).toFixed(1)}%`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
+    {l:'จำนวนแผ่นรวม',v:f(tSh)+' แผ่น',s:`avg ${f(d.length?Math.round(tSh/d.length):0)} แผ่น/job`},
+    {l:'จำนวน Job',v:f(d.length)+' งาน',s:`เฉลี่ย ${fB(tv/d.length||0)} ฿/งาน`},
+    {l:'Job ≥ 5,000 ฿',v:f(h5k.length)+' งาน',s:`${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
+    {l:'ยังไม่คุยที่ประชุม',v:f(ni.length)+' งาน',s:`${fB(ni.reduce((a,r)=>a+r.val,0))} ฿`,badge:ni.length?'รอประชุม':'ครบ',bc:ni.length?'warn':'ok'},
+    {l:'แผนกสูงสุด',v:topD?topD[0]:'—',s:topD?`${fB(topD[1])} ฿`:'',badge:'#1',bc:'info'},
+  ].map(k=>`<div class="kpi"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
   con.appendChild(kDiv);
 
-  con.appendChild(renderTargetManager('ap'));
-  toggleTLBody('ap');
+  con.appendChild(buildTLAccordion('ap'));
 
-  mkSH(con,'📈','Monthly Value & Dept','แนวโน้มรายเดือนพร้อม Target Lines');
-  const r1=mkEl('div','charts-2');con.appendChild(r1);
-  r1.appendChild(mkCard2('📅 Monthly Value (฿)',`<div style="height:250px"><canvas id="apMonthly"></canvas></div>`));
-  r1.appendChild(mkCard2('🏭 Value by Dept',`<div style="height:250px"><canvas id="apDept"></canvas></div>`));
+  sh(con,'Monthly Value & Dept');
+  const r1=mkEl('div','g2');con.appendChild(r1);
+  r1.appendChild(mkCd('📅 Monthly Value (฿)','','<div style="height:240px"><canvas id="apMo"></canvas></div>'));
+  r1.appendChild(mkCd('🏢 มูลค่าตาม Department','','<div style="height:240px"><canvas id="apDept"></canvas></div>'));
 
-  mkSH(con,'📊','Pareto Analysis','สาเหตุ');
-  const r2=mkEl('div','charts-2');con.appendChild(r2);
-  r2.appendChild(mkCard2('⚠ Pareto — สาเหตุ vs มูลค่า',`<div id="ap-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apPareto1"></canvas></div>`));
-  r2.appendChild(mkCard2('🔢 Pareto — สาเหตุ vs ครั้ง',`<div id="ap-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apPareto2"></canvas></div>`));
+  sh(con,'Pareto Analysis');
+  const r2=mkEl('div','g2');con.appendChild(r2);
+  r2.appendChild(mkCd('⚠ Pareto — สาเหตุ vs มูลค่า','',`<div id="ap-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP1"></canvas></div>`));
+  r2.appendChild(mkCd('🔢 Pareto — สาเหตุ vs ครั้ง','',`<div id="ap-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP2"></canvas></div>`));
 
-  mkSH(con,'🏆','Product Ranking','Top 15');
-  const prC=mkCard('📦 Top 15 Products','ตามมูลค่า','ap-pr-badge');prC.querySelector('.card-body').innerHTML='<div style="height:320px"><canvas id="apProduct"></canvas></div>';con.appendChild(prC);
+  sh(con,'Product Ranking');
+  const prC=mkCdB('📦 Top 15 Products','','ap-pb','<div style="height:300px"><canvas id="apProd"></canvas></div>');con.appendChild(prC);
 
-  mkSH(con,'📋','รายละเอียด',`${AP.fil.length.toLocaleString()} รายการ`,'ap-tbl-sub');
-  const tC=mkCard('รายการทั้งหมด','');tC.querySelector('.card-body').remove();
-  tC.innerHTML+=`
-    <div class="search-bar">
-      <input type="text" class="search-input" id="ap-search" placeholder="🔍 ค้นหา JO, Code, สาเหตุ, แผนก..." oninput="apSrch()">
-      <div class="search-ct" id="ap-sct"></div>
-    </div>
-    <div class="tbl-scroll"><table>
+  sh(con,'รายละเอียด',`${d.length.toLocaleString()} รายการ`,'ap-tsub');
+  const tC=mkEl('div','card');
+  tC.innerHTML=`
+    <div class="sbar"><input type="text" class="si" id="ap-si2" placeholder="ค้นหา JO, Code, สาเหตุ, แผนก..." oninput="apSrch()"><div class="sct" id="ap-sc"></div></div>
+    <div class="tscroll"><table>
       <thead><tr>
-        <th onclick="apSortBy('jo')">JO</th><th onclick="apSortBy('code')">Code</th>
-        <th onclick="apSortBy('cause')">สาเหตุ</th><th onclick="apSortBy('dept')">Dept</th>
-        <th onclick="apSortBy('facc')">Factory</th><th onclick="apSortBy('mo')">เดือน</th>
-        <th onclick="apSortBy('val')" class="sd">มูลค่า (฿)</th><th>สถานะ</th>
+        <th onclick="apSort('jo')">JO</th><th onclick="apSort('code')">Code</th>
+        <th onclick="apSort('cause')">สาเหตุ</th><th onclick="apSort('dept')">Dept</th>
+        <th onclick="apSort('facc')">Factory</th><th onclick="apSort('mo')">เดือน</th>
+        <th onclick="apSort('val')" class="sd">มูลค่า (฿)</th><th>สถานะ</th>
       </tr></thead>
-      <tbody id="ap-tbody"></tbody>
-      <tfoot><tr id="ap-tfoot"></tr></tfoot>
+      <tbody id="ap-tb"></tbody>
+      <tfoot><tr id="ap-tf"></tr></tfoot>
     </table></div>
-    <div class="pg" id="ap-pg"></div>`;
+    <div class="pgn" id="ap-pg"></div>`;
   con.appendChild(tC);
 
-  requestAnimationFrame(()=>{buildAPCharts(d);apRenderTable();});
+  requestAnimationFrame(()=>{buildAPCharts(d);apTbl();});
 }
 
 function buildAPCharts(d){
-  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k2=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k2]=(mo[k2]||0)+r.val;}});
-  const mK=Object.keys(mo).sort(),mV=mK.map(k2=>mo[k2]);
-  const mL=mK.map(k2=>{const[y,m]=k2.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
-  const tl=buildTargetDatasets('ap',mK.length);
+  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k]=(mo[k]||0)+r.val;}});
+  const mK=Object.keys(mo).sort(),mV=mK.map(k=>mo[k]);
+  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
+  const tds=buildTDS('ap',mK.length);
   dc('apM');
-  const ds=[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tl.filter(l=>v>l.data[0]);return ov.length?'rgba(198,40,40,.82)':'rgba(106,27,154,.82)';}),borderRadius:5,order:2},...tl];
-  charts['apM']=new Chart(document.getElementById('apMonthly'),{type:'bar',data:{labels:mL,datasets:ds},options:moChartOpts()});
+  CHS['apM']=new Chart(document.getElementById('apMo'),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#7C3AED';}),borderRadius:4,order:2},...tds]},options:moOpts()});
 
-  const dg={};d.forEach(r=>{if(r.dept)dg[r.dept]=(dg[r.dept]||0)+r.val;});
-  const dS=Object.entries(dg).sort((a,b)=>b[1]-a[1]);
-  dc('apD');charts['apD']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:C_PURPLE.slice(0,dS.length),borderRadius:4}]},options:hChartOpts()});
+  const dG={};d.forEach(r=>{if(r.dept)dG[r.dept]=(dG[r.dept]||0)+r.val;});
+  const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
+  dc('apDept');CHS['apDept']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:'#7C3AED',borderRadius:3}]},options:hOpts()});
 
-  const cg={};d.forEach(r=>{if(r.cause){const k2=r.cause.toLowerCase().replace(/\s+/g,' ');cg[k2]=(cg[k2]||0)+r.val;}});
-  buildPareto('apPareto1','ap-pi1',cg);
-  const cc={};d.forEach(r=>{if(r.cause){const k2=r.cause.toLowerCase().replace(/\s+/g,' ');cc[k2]=(cc[k2]||0)+1;}});
-  buildPareto('apPareto2','ap-pi2',cc);
+  const cG={};d.forEach(r=>{if(r.cause){const k=r.cause.toLowerCase().replace(/\s+/g,' ');cG[k]=(cG[k]||0)+r.val;}});
+  buildPareto('apP1','ap-pi1',cG);
+  const cc={};d.forEach(r=>{if(r.cause){const k=r.cause.toLowerCase().replace(/\s+/g,' ');cc[k]=(cc[k]||0)+1;}});
+  buildPareto('apP2','ap-pi2',cc);
 
   const pG={};d.forEach(r=>{if(r.code)pG[r.code]=(pG[r.code]||0)+r.val;});
   const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const pb=document.getElementById('ap-pr-badge');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('apProd');charts['apProd']=new Chart(document.getElementById('apProduct'),{type:'bar',data:{labels:pS.map(x=>x[0].length>30?x[0].slice(0,29)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map((_,i)=>`hsla(${270+i*10},55%,${52-i*1.5}%,.85)`),borderRadius:4}]},options:{...hChartOpts(),layout:{padding:{right:70}}}});
+  const pb=document.getElementById('ap-pb');if(pb)pb.textContent=`Top ${pS.length}`;
+  dc('apProd');CHS['apProd']=new Chart(document.getElementById('apProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:'#6D28D9',borderRadius:3}]},options:{...hOpts(),layout:{padding:{right:60}}}});
 }
 
-// ── Shared chart opts ──
-function moChartOpts(){
-  return{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{font:{size:9},boxWidth:14,usePointStyle:true}},tooltip:{callbacks:{label:c=>{if(c.dataset.type==='line')return` ${c.dataset.label}: ${fB(c.parsed.y)} ฿`;return` ${fB(c.parsed.y)} ฿`;}}}},
-    scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}}},
-    animation:{onComplete(ctx){lblBarsV(ctx.chart);}}};
+// ═══════════════════════════════════════
+// TARGET LINES ACCORDION
+// ═══════════════════════════════════════
+function buildTLAccordion(k){
+  const lines=TL[k]||[];
+  const cnt=lines.filter(l=>l.show!==false).length;
+  const div=document.createElement('div');
+  div.className='acc';div.id=`acc-tl-${k}`;
+  div.innerHTML=`
+    <div class="acc-hdr" onclick="toggleAcc('${k}')">
+      <span style="font-size:14px">🎯</span>
+      <div class="acc-hdr-t">Target Lines</div>
+      <div class="acc-hdr-s">${cnt > 0 ? cnt+' เส้นใช้งาน' : 'ไม่มีเส้น'}</div>
+      <span class="acc-arrow" id="acc-arr-${k}">▼</span>
+    </div>
+    <div class="acc-body" id="acc-body-${k}">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">
+        Target Lines จัดการใน Google Sheets (Sheet: <strong>Config</strong>) — กด "Reload Target Lines" ในหน้าตั้งค่าหลังแก้ไข<br>
+        หรือแก้ไขชั่วคราวด้านล่าง (เก็บใน localStorage เครื่องนี้เท่านั้น)
+      </div>
+      <div class="tl-list" id="tl-list-${k}"></div>
+      <button class="add-tl" onclick="addTL('${k}')">+ เพิ่มเส้น</button>
+    </div>`;
+  renderTLList(k, div.querySelector(`#tl-list-${k}`), lines);
+  return div;
 }
-function hChartOpts(){
+
+function toggleAcc(k){
+  const body=document.getElementById(`acc-body-${k}`);
+  const arr=document.getElementById(`acc-arr-${k}`);
+  const open=body.classList.toggle('open');
+  arr.classList.toggle('open',open);
+}
+
+function renderTLList(k,con,lines){
+  con.innerHTML='';
+  lines.forEach((ln,i)=>{
+    const row=document.createElement('div');row.className='tl-row';
+    const dashOpts=['solid','dashed','dotted'].map(v=>`<option value="${v}"${ln.dash===v?' selected':''}>${{solid:'— ทึบ',dashed:'- - ปะ',dotted:'··· จุด'}[v]}</option>`).join('');
+    const crvOpts=['step','straight','smooth'].map(v=>`<option value="${v}"${ln.curve===v?' selected':''}>${{step:'⌐ step',straight:'/ ตรง',smooth:'~ โค้ง'}[v]}</option>`).join('');
+    row.innerHTML=`
+      <div class="tl-color" style="background:${ln.color}"></div>
+      <input type="color" class="tl-cp" value="${ln.color}" oninput="updTL('${k}',${i},'color',this.value)">
+      <input class="ti ti-name" value="${escH(ln.name)}" placeholder="ชื่อ" oninput="updTL('${k}',${i},'name',this.value)">
+      <input type="number" class="ti ti-val" value="${ln.val}" min="0" step="10000" oninput="updTL('${k}',${i},'val',parseFloat(this.value)||0)">
+      <select class="tl-sel" onchange="updTL('${k}',${i},'dash',this.value)">${dashOpts}</select>
+      <select class="tl-sel" onchange="updTL('${k}',${i},'curve',this.value)">${crvOpts}</select>
+      <label class="tl-chk"><input type="checkbox" ${ln.show!==false?'checked':''} onchange="updTL('${k}',${i},'show',this.checked)"> แสดง</label>
+      <button class="btn btn-danger btn-sm" onclick="rmTL('${k}',${i})">✕</button>`;
+    con.appendChild(row);
+  });
+}
+
+function updTL(k,i,field,val){
+  TL[k][i][field]=val;saveTL(k);
+  // update color swatch
+  const con=document.getElementById(`tl-list-${k}`);
+  if(field==='color'&&con){const swatch=con.children[i]?.querySelector('.tl-color');if(swatch)swatch.style.background=val;}
+  rebuildMoChart(k);
+}
+function addTL(k){
+  const pal=['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#0891B2'];
+  TL[k].push({id:Date.now(),name:`เส้น ${TL[k].length+1}`,val:300000,color:pal[TL[k].length%pal.length],dash:'dashed',curve:'step',show:true});
+  saveTL(k);
+  const acc=document.getElementById(`acc-tl-${k}`);
+  if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);
+  rebuildMoChart(k);
+}
+function rmTL(k,i){
+  TL[k].splice(i,1);saveTL(k);
+  const acc=document.getElementById(`acc-tl-${k}`);
+  if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);
+  rebuildMoChart(k);
+}
+
+function rebuildMoChart(k){
+  const d=k==='rp'?RP.fil:AP.fil;if(!d.length)return;
+  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const key=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[key]=(mo[key]||0)+r.val;}});
+  const mK=Object.keys(mo).sort(),mV=mK.map(key=>mo[key]);
+  const mL=mK.map(key=>{const[y,m]=key.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
+  const tds=buildTDS(k,mK.length);
+  const cid=k==='rp'?'rpMo':'apMo';const ck=k==='rp'?'rpM':'apM';const bc=k==='rp'?'#2563EB':'#7C3AED';
+  dc(ck);
+  CHS[ck]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':bc;}),borderRadius:4,order:2},...tds]},options:moOpts()});
+}
+
+// ═══════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════
+function buildTDS(k,n){
+  return (TL[k]||[]).filter(l=>l.show!==false).map(ln=>({
+    label:ln.name,data:Array(n).fill(ln.val),type:'line',
+    borderColor:ln.color,borderWidth:1.5,
+    borderDash:ln.dash==='dashed'?[7,4]:ln.dash==='dotted'?[2,3]:[],
+    pointRadius:0,fill:false,
+    tension:ln.curve==='smooth'?.35:0,
+    stepped:ln.curve==='step'?true:false,
+    yAxisID:'y',order:0,
+  }));
+}
+function moOpts(){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:9},boxWidth:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?` ${c.dataset.label}: ${fB(c.parsed.y)} ฿`:` ${fB(c.parsed.y)} ฿`}}},
+    scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}}},
+    animation:{onComplete(ctx){lblV(ctx.chart);}}};
+}
+function hOpts(){
   return{indexAxis:'y',responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.parsed.x)} ฿`}}},
-    scales:{x:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}},
-    animation:{onComplete(ctx){lblBarsH(ctx.chart);}}};
+    scales:{x:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:{size:10}},grid:{display:false}}},
+    animation:{onComplete(ctx){lblH(ctx.chart);}}};
 }
-function lblBarsV(ch){const c=ch.ctx;c.save();c.font='bold 8px IBM Plex Mono';c.textAlign='center';c.fillStyle='#333';ch.data.datasets[0].data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x,b.y-5);}});c.restore();}
-function lblBarsH(ch){const c=ch.ctx;c.save();c.font='8px IBM Plex Mono';c.fillStyle='#333';c.textAlign='left';ch.data.datasets[0].data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x+4,b.y+4);}});c.restore();}
-
-function buildPareto(canvasId,insightId,grpObj){
-  const sorted=Object.entries(grpObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const total=sorted.reduce((a,[,v])=>a+v,0);if(!total)return;
-  let cum=0;const cp=sorted.map(([,v])=>{cum+=v;return+(cum/total*100).toFixed(1);});
-  let n80=0,v80=0;for(const[,v] of sorted){n80++;v80+=v;if(v80/total>=0.8)break;}
-  const el2=document.getElementById(insightId);
-  if(el2){el2.style.display='block';el2.innerHTML=`💡 <strong>${n80} รายการแรก</strong> คิดเป็น <strong>${Math.round(v80/total*100)}%</strong>${sorted[0]?` — "${sorted[0][0]}" สูงสุด <strong>${fB(sorted[0][1])}</strong>`:''}`;};
-  dc(canvasId);
-  charts[canvasId]=new Chart(document.getElementById(canvasId),{type:'bar',data:{labels:sorted.map(([k])=>k.length>16?k.slice(0,15)+'…':k),datasets:[{label:'มูลค่า',data:sorted.map(([,v])=>v),backgroundColor:C_WARN.slice(0,sorted.length),borderRadius:3,yAxisID:'y'},{label:'%สะสม',data:cp,type:'line',borderColor:'#1565C0',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1565C0',fill:false,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:12}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?` ${fmt(c.parsed.y)}`:` ${c.parsed.y}%`}}},scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},y:{position:'left',ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}},y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#1565C0'},grid:{display:false}}}}});
+function lblV(ch){const c=ch.ctx;c.save();c.font='bold 8px IBM Plex Mono';c.textAlign='center';c.fillStyle='#555';ch.data.datasets[0]?.data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x,b.y-5);}});c.restore();}
+function lblH(ch){const c=ch.ctx;c.save();c.font='8px IBM Plex Mono';c.fillStyle='#555';c.textAlign='left';ch.data.datasets[0]?.data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x+4,b.y+4);}});c.restore();}
+function buildPareto(cid,iid,grp){
+  const s=Object.entries(grp).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const tot=s.reduce((a,[,v])=>a+v,0);if(!tot)return;
+  let cum=0;const cp=s.map(([,v])=>{cum+=v;return+(cum/tot*100).toFixed(1);});
+  let n80=0,v80=0;for(const[,v]of s){n80++;v80+=v;if(v80/tot>=0.8)break;}
+  const el=document.getElementById(iid);
+  if(el){el.style.display='block';el.innerHTML=`${n80} รายการแรกคิดเป็น <strong>${Math.round(v80/tot*100)}%</strong> ของทั้งหมด${s[0]?` — "${s[0][0]}" สูงสุด <strong>${fB(s[0][1])}</strong>`:''}`;};
+  dc(cid);
+  CHS[cid]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:s.map(([k])=>k.length>16?k.slice(0,15)+'…':k),datasets:[{label:'มูลค่า',data:s.map(([,v])=>v),backgroundColor:'#2563EB',borderRadius:3,yAxisID:'y'},{label:'%สะสม',data:cp,type:'line',borderColor:'#DC2626',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#DC2626',fill:false,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?` ${f(c.parsed.y)}`:` ${c.parsed.y}%`}}},scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},y:{position:'left',ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#DC2626'},grid:{display:false}}}}});
 }
 
-// ── TABLE ──
-function rpSrch(){RP.search=document.getElementById('rp-search').value.toLowerCase();RP.pg=0;rpRenderTable();}
-function rpSortBy(c){if(RP.sort.c===c)RP.sort.d*=-1;else{RP.sort.c=c;RP.sort.d=-1;}rpRenderTable();}
-function rpRenderTable(){
-  let data=RP.fil.filter(r=>!RP.search||[r.jo,r.compnt,r.machine,r.problem].join(' ').toLowerCase().includes(RP.search));
-  data=[...data].sort((a,b)=>{const va=a[RP.sort.c],vb=b[RP.sort.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*RP.sort.d;});
+// ═══════════════════════════════════════
+// TABLES
+// ═══════════════════════════════════════
+function rpSrch(){RP.q=document.getElementById('rp-si2').value.toLowerCase();RP.pg=0;rpTbl();}
+function rpSort(c){if(RP.srt.c===c)RP.srt.d*=-1;else{RP.srt.c=c;RP.srt.d=-1;}rpTbl();}
+function rpTbl(){
+  let data=RP.fil.filter(r=>!RP.q||[r.jo,r.compnt,r.machine,r.problem,r.dept,r.fac].join(' ').toLowerCase().includes(RP.q));
+  data=[...data].sort((a,b)=>{const va=a[RP.srt.c],vb=b[RP.srt.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*RP.srt.d;});
+  document.querySelectorAll('#rp-content thead th').forEach((th,i)=>{th.classList.remove('sa','sd');const ks=['jo','compnt','machine','problem','dept','fac','mo','val',''][i];if(ks===RP.srt.c)th.classList.add(RP.srt.d>0?'sa':'sd');});
   const tot=data.length,pages=Math.ceil(tot/PAGE)||1;RP.pg=Math.min(RP.pg,pages-1);
   const sl=data.slice(RP.pg*PAGE,(RP.pg+1)*PAGE);
-  const sub=document.getElementById('rp-tbl-sub');if(sub)sub.textContent=`${RP.fil.length.toLocaleString()} รายการ`;
-  const sct=document.getElementById('rp-sct');if(sct)sct.textContent=RP.search?`พบ ${tot.toLocaleString()}/${RP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
-  const tb=document.getElementById('rp-tbody');if(!tb)return;
-  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rh':''} ${r.check===0?'rn':''}">
+  const sc=document.getElementById('rp-sc');if(sc)sc.textContent=RP.q?`พบ ${tot.toLocaleString()}/${RP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
+  const sub=document.getElementById('rp-tsub');if(sub)sub.textContent=`${RP.fil.length.toLocaleString()} รายการ`;
+  const tb=document.getElementById('rp-tb');if(!tb)return;
+  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rhi':''} ${r.check===0?'rno':''}">
     <td class="mono">${r.jo}</td>
-    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.compnt}">${r.compnt}</td>
+    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.compnt}">${r.compnt}</td>
     <td><strong>${r.machine}</strong></td>
-    <td style="color:${r.problem==='COLOR'?'#C62828':r.problem==='SCUM'?'#E65100':'inherit'}">${r.problem}</td>
+    <td>${r.problem}</td>
+    <td>${r.dept}</td><td>${r.fac}</td>
     <td style="white-space:nowrap">${MN[r.mo]||''} ${r.yr}</td>
-    <td class="tr-right mono" style="color:${r.val>=5000?'var(--red)':'var(--blue)'}">${fmt(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
-    <td>${r.check===0?'<span class="tag tag-n">ยังไม่คุย</span>':'<span class="tag tag-ok">✓ คุยแล้ว</span>'}</td>
+    <td class="tar mono" style="color:${r.val>=5000?'var(--red)':'var(--blue)'}">${f(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
+    <td>${r.check===0?'<span class="tag tag-n">รอ</span>':'<span class="tag tag-ok">✓</span>'}</td>
   </tr>`).join('');
   const tv=data.reduce((a,r)=>a+r.val,0);
-  const tf=document.getElementById('rp-tfoot');if(tf)tf.innerHTML=`<td colspan="5">รวม ${data.length.toLocaleString()}</td><td class="tr-right mono">${fmt(tv)}</td><td></td>`;
-  renderPg('rp-pg',RP.pg,pages,tot,p=>{RP.pg=p;rpRenderTable();});
-}
-function apSrch(){AP.search=document.getElementById('ap-search').value.toLowerCase();AP.pg=0;apRenderTable();}
-function apSortBy(c){if(AP.sort.c===c)AP.sort.d*=-1;else{AP.sort.c=c;AP.sort.d=-1;}apRenderTable();}
-function apRenderTable(){
-  let data=AP.fil.filter(r=>!AP.search||[r.jo,r.code,r.cause,r.dept,r.facc].join(' ').toLowerCase().includes(AP.search));
-  data=[...data].sort((a,b)=>{const va=a[AP.sort.c],vb=b[AP.sort.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*AP.sort.d;});
-  const tot=data.length,pages=Math.ceil(tot/PAGE)||1;AP.pg=Math.min(AP.pg,pages-1);
-  const sl=data.slice(AP.pg*PAGE,(AP.pg+1)*PAGE);
-  const sub=document.getElementById('ap-tbl-sub');if(sub)sub.textContent=`${AP.fil.length.toLocaleString()} รายการ`;
-  const sct=document.getElementById('ap-sct');if(sct)sct.textContent=AP.search?`พบ ${tot.toLocaleString()}/${AP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
-  const tb=document.getElementById('ap-tbody');if(!tb)return;
-  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rh':''} ${r.check===0?'rn':''}">
-    <td class="mono">${r.jo}</td>
-    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.code}">${r.code}</td>
-    <td>${r.cause}</td><td><strong>${r.dept}</strong></td><td>${r.facc}</td>
-    <td style="white-space:nowrap">${MN[r.mo]||''} ${r.yr}</td>
-    <td class="tr-right mono" style="color:${r.val>=5000?'var(--red)':'var(--purple)'}">${fmt(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
-    <td>${r.check===0?'<span class="tag tag-n">ยังไม่คุย</span>':'<span class="tag tag-ok">✓ คุยแล้ว</span>'}</td>
-  </tr>`).join('');
-  const tv=data.reduce((a,r)=>a+r.val,0);
-  const tf=document.getElementById('ap-tfoot');if(tf)tf.innerHTML=`<td colspan="6">รวม ${data.length.toLocaleString()}</td><td class="tr-right mono">${fmt(tv)}</td><td></td>`;
-  renderPg('ap-pg',AP.pg,pages,tot,p=>{AP.pg=p;apRenderTable();});
+  const tf=document.getElementById('rp-tf');if(tf)tf.innerHTML=`<td colspan="7">รวม ${data.length.toLocaleString()}</td><td class="tar mono">${f(tv)}</td><td></td>`;
+  pgn('rp-pg',RP.pg,pages,tot,p=>{RP.pg=p;rpTbl();});
 }
 
-// ── helpers ──
-function kpiHtml(k){return`<div class="kpi" style="--kc:${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.sub||''}</div>${k.badge?`<span class="kpi-badge ${k.bc}">${k.badge}</span>`:''}</div>`;}
-function mkEl(tag,cls){const e=document.createElement(tag);e.className=cls;return e;}
-function mkCard(title,sub,badgeId){
-  const c=document.createElement('div');c.className='card';
-  c.innerHTML=`<div class="card-hdr"><div><div class="card-title">${title}</div>${sub?`<div class="card-sub">${sub}</div>`:''}</div>${badgeId?`<span class="card-badge" id="${badgeId}">—</span>`:''}</div><div class="card-body"></div>`;
-  return c;
+function apSrch(){AP.q=document.getElementById('ap-si2').value.toLowerCase();AP.pg=0;apTbl();}
+function apSort(c){if(AP.srt.c===c)AP.srt.d*=-1;else{AP.srt.c=c;AP.srt.d=-1;}apTbl();}
+function apTbl(){
+  let data=AP.fil.filter(r=>!AP.q||[r.jo,r.code,r.cause,r.dept,r.facc].join(' ').toLowerCase().includes(AP.q));
+  data=[...data].sort((a,b)=>{const va=a[AP.srt.c],vb=b[AP.srt.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*AP.srt.d;});
+  const tot=data.length,pages=Math.ceil(tot/PAGE)||1;AP.pg=Math.min(AP.pg,pages-1);
+  const sl=data.slice(AP.pg*PAGE,(AP.pg+1)*PAGE);
+  const sc=document.getElementById('ap-sc');if(sc)sc.textContent=AP.q?`พบ ${tot.toLocaleString()}/${AP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
+  const sub=document.getElementById('ap-tsub');if(sub)sub.textContent=`${AP.fil.length.toLocaleString()} รายการ`;
+  const tb=document.getElementById('ap-tb');if(!tb)return;
+  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rhi':''} ${r.check===0?'rno':''}">
+    <td class="mono">${r.jo}</td>
+    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.code}">${r.code}</td>
+    <td>${r.cause}</td><td><strong>${r.dept}</strong></td><td>${r.facc||r.fac||''}</td>
+    <td style="white-space:nowrap">${MN[r.mo]||''} ${r.yr}</td>
+    <td class="tar mono" style="color:${r.val>=5000?'var(--red)':'#7C3AED'}">${f(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
+    <td>${r.check===0?'<span class="tag tag-n">รอ</span>':'<span class="tag tag-ok">✓</span>'}</td>
+  </tr>`).join('');
+  const tv=data.reduce((a,r)=>a+r.val,0);
+  const tf=document.getElementById('ap-tf');if(tf)tf.innerHTML=`<td colspan="6">รวม ${data.length.toLocaleString()}</td><td class="tar mono">${f(tv)}</td><td></td>`;
+  pgn('ap-pg',AP.pg,pages,tot,p=>{AP.pg=p;apTbl();});
 }
-function mkCard2(title,bodyHtml){
-  const c=document.createElement('div');c.className='card';
-  c.innerHTML=`<div class="card-hdr"><div class="card-title">${title}</div></div><div class="card-body">${bodyHtml}</div>`;return c;
-}
-function mkSH(con,icon,title,sub,subId){
-  const d=document.createElement('div');d.className='section-hdr';
-  d.innerHTML=`<div class="section-icon">${icon}</div><div><div class="section-title">${title}</div><div class="section-sub"${subId?` id="${subId}"`:''} >${sub}</div></div>`;
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function mkEl(t,c){const e=document.createElement(t);e.className=c;return e;}
+function sh(con,title,sub,subId){
+  const d=document.createElement('div');d.className='sec';
+  d.innerHTML=`<div><div class="sec-t">${title}</div>${sub?`<div class="sec-s"${subId?` id="${subId}"`:''} >${sub}</div>`:''}`;
   con.appendChild(d);
 }
-function renderPg(id,pg,pages,total,cb){
-  const el2=document.getElementById(id);if(!el2)return;
-  if(pages<=1){el2.innerHTML='';return;}
-  const s2=pg*PAGE+1,e2=Math.min((pg+1)*PAGE,total);
+function mkCd(title,sub,body){
+  const c=document.createElement('div');c.className='card';
+  c.innerHTML=`<div class="card-h"><div><div class="card-t">${title}</div>${sub?`<div class="card-s">${sub}</div>`:''}</div></div><div class="card-b">${body}</div>`;
+  return c;
+}
+function mkCdB(title,sub,bid,body){
+  const c=document.createElement('div');c.className='card';
+  c.innerHTML=`<div class="card-h"><div><div class="card-t">${title}</div>${sub?`<div class="card-s">${sub}</div>`:''}</div>${bid?`<span style="font-size:10px;color:var(--ink3);font-weight:600" id="${bid}">—</span>`:''}</div><div class="card-b">${body}</div>`;
+  return c;
+}
+function pgn(id,pg,pages,tot,cb){
+  const el=document.getElementById(id);if(!el)return;
+  if(pages<=1){el.innerHTML='';return;}
+  const s=pg*PAGE+1,e=Math.min((pg+1)*PAGE,tot);
   const show=new Set([0,pg-1,pg,pg+1,pages-1].filter(x=>x>=0&&x<pages));
   let btns='',prev=-1;
   [...show].sort((a,b)=>a-b).forEach(p=>{
-    if(prev>=0&&p>prev+1)btns+=`<span style="padding:0 4px;color:var(--gray-600)">…</span>`;
-    btns+=`<button class="pb${p===pg?' on':''}" onclick="(${cb.toString()})(${p})">${p+1}</button>`;prev=p;
+    if(prev>=0&&p>prev+1)btns+=`<span style="padding:0 3px;color:var(--ink3)">…</span>`;
+    btns+=`<button class="pgb${p===pg?' on':''}" onclick="(${cb.toString()})(${p})">${p+1}</button>`;prev=p;
   });
-  el2.innerHTML=`<div class="pg-info">${s2.toLocaleString()}–${e2.toLocaleString()} จาก ${total.toLocaleString()}</div><div class="pg-btns"><button class="pb" ${pg===0?'disabled':''} onclick="(${cb.toString()})(${pg-1})">‹</button>${btns}<button class="pb" ${pg===pages-1?'disabled':''} onclick="(${cb.toString()})(${pg+1})">›</button></div>`;
+  el.innerHTML=`<div class="pgi">${s.toLocaleString()}–${e.toLocaleString()} จาก ${tot.toLocaleString()}</div><div class="pgb-wrap"><button class="pgb" ${pg===0?'disabled':''} onclick="(${cb.toString()})(${pg-1})">‹</button>${btns}<button class="pgb" ${pg===pages-1?'disabled':''} onclick="(${cb.toString()})(${pg+1})">›</button></div>`;
 }
 </script>
 </body>
