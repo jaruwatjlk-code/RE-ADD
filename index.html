@@ -3,286 +3,298 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Loss Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Replan Performance & Loss Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#1A1A2E;--ink2:#4A4A68;--ink3:#9090A8;
-  --blue:#2563EB;--blue-lt:#EFF6FF;--blue-md:#BFDBFE;
-  --line:#E5E7EB;--line2:#F3F4F6;--bg:#F8FAFC;--white:#FFFFFF;
+  --ink:#111827;--ink2:#374151;--ink3:#6B7280;--ink4:#9CA3AF;
+  --blue:#1D4ED8;--blue2:#3B82F6;--blue-lt:#EFF6FF;--blue-md:#BFDBFE;
   --red:#DC2626;--red-lt:#FEF2F2;
   --green:#16A34A;--green-lt:#F0FDF4;
   --amber:#D97706;--amber-lt:#FFFBEB;
-  --s1:0 1px 3px rgba(0,0,0,.08);--s2:0 4px 12px rgba(0,0,0,.08);--s3:0 8px 24px rgba(0,0,0,.10);
-  --r:8px;--r2:12px;--r3:16px;
+  --purple:#7C3AED;--purple-lt:#F5F3FF;
+  --orange:#EA580C;--orange-lt:#FFF7ED;
+  --teal:#0D9488;--teal-lt:#F0FDFA;
+  --line:#E5E7EB;--line2:#F3F4F6;--bg:#F1F5F9;--white:#FFFFFF;
+  --s1:0 1px 2px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.1);
+  --s2:0 4px 6px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.06);
+  --s3:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+  --r:6px;--r2:10px;--r3:14px;
 }
 html{font-size:14px;color:var(--ink)}
-body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);-webkit-font-smoothing:antialiased;min-height:100vh}
 
-/* ── APP BAR ── */
-.bar{position:sticky;top:0;z-index:300;background:var(--white);border-bottom:1px solid var(--line);height:52px;padding:0 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--s1)}
-.bar-logo{font-size:20px;cursor:pointer;user-select:none;padding:4px 6px;border-radius:6px;transition:background .1s}
-.bar-logo:active,.bar-logo.flash{background:var(--blue-lt)}
-.bar-title{font-size:15px;font-weight:600;flex:1;color:var(--ink)}
-.bar-sub{font-size:10px;font-weight:400;color:var(--ink3);margin-left:6px}
-.status-pill{font-size:10px;background:var(--line2);color:var(--ink2);padding:3px 10px;border-radius:20px;border:1px solid var(--line)}
-.status-pill.live{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-md)}
+/* ── STICKY HEADER ── */
+.header{position:sticky;top:0;z-index:400;background:var(--white);border-bottom:1px solid var(--line);box-shadow:var(--s1)}
+.header-top{padding:10px 20px;display:flex;align-items:center;gap:16px}
+.logo-box{width:36px;height:36px;background:linear-gradient(135deg,#DC2626,#EA580C);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none}
+.logo-box:active{opacity:.8}
+.header-titles{flex:1;min-width:0}
+.header-title{font-size:14px;font-weight:700;color:var(--ink)}
+.header-title span{color:var(--red)}
+.header-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.header-right{font-size:11px;text-align:right;color:var(--ink3);line-height:1.5}
+.header-right strong{color:var(--ink2);display:block}
+
+/* ── STICKY FILTER BAR ── */
+.fbar{position:sticky;top:57px;z-index:300;background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.fbar::-webkit-scrollbar{height:3px}.fbar::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.fg{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.fl{font-size:9px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em}
+.fsel{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:5px 28px 5px 9px;font-size:11px;font-family:inherit;color:var(--ink);outline:none;cursor:pointer;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;min-width:100px}
+.fsel:focus{border-color:var(--blue2)}
+.fbar-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:4px;border:none;border-radius:var(--r);padding:6px 12px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-reset{background:var(--white);color:var(--ink2);border:1px solid var(--line)}.btn-reset:hover{border-color:var(--blue2);color:var(--blue)}
+.btn-update{background:#F59E0B;color:var(--white)}.btn-update:hover{background:#D97706}
+.btn-blue{background:var(--blue);color:var(--white)}.btn-blue:hover{background:#1E40AF}
+.btn-ghost{background:none;color:var(--ink3);border:1px solid var(--line);font-size:10px;padding:5px 10px}.btn-ghost:hover{color:var(--blue2);border-color:var(--blue-md)}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--line);flex-shrink:0}
+.status-dot.live{background:#22C55E;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* ── TABS ── */
-.tabs{position:sticky;top:52px;z-index:200;background:var(--white);border-bottom:1px solid var(--line);display:flex;padding:0 20px}
-.tab{height:42px;padding:0 18px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap}
-.tab:hover{color:var(--blue)}
+.tabs{position:sticky;top:105px;z-index:290;background:var(--white);border-bottom:1px solid var(--line);display:flex;padding:0 20px}
+.tab{height:38px;padding:0 16px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.tab:hover{color:var(--blue2)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 #tab-cfg{display:none}#tab-cfg.on{display:flex}
 
 /* ── PAGES ── */
 .page{display:none}.page.active{display:block}
 
-/* ── REFRESH BAR ── */
-.rbar{background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink3)}
-.rbar .spacer{flex:1}
-.ts{font-family:'IBM Plex Mono',monospace;font-size:10px}
+/* ── CONTENT AREA ── */
+.content{padding:16px 20px;max-width:1440px;margin:0 auto}
 
-/* ── FILTER BAR ── */
-.fbar{position:sticky;top:94px;z-index:190;background:var(--white);border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;box-shadow:var(--s1)}
-.fg{display:flex;flex-direction:column;gap:2px}
-.fl{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
-.fsel{background:var(--line2);border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;font-size:11px;font-family:inherit;color:var(--ink);outline:none;cursor:pointer;transition:border-color .15s;min-width:88px}
-.fsel:focus{border-color:var(--blue);background:var(--white)}
-.chips{display:flex;gap:5px;flex-wrap:wrap;align-self:flex-end}
-.chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-lt);color:var(--blue);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:500;border:1px solid var(--blue-md)}
-.chip-x{cursor:pointer;opacity:.5;font-size:12px;line-height:1}.chip-x:hover{opacity:1}
+/* ── SECTION HEADERS ── */
+.sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:6px}
+.sec-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-title{font-size:13px;font-weight:600;color:var(--ink)}
 
-/* ── CONTENT ── */
-.content{padding:18px 20px;max-width:1400px;margin:0 auto}
-
-/* ── KPI ── */
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
-.kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);padding:16px;position:relative;overflow:hidden;transition:box-shadow .2s}
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--white);border-radius:var(--r2);padding:16px 16px 14px;box-shadow:var(--s1);border:1px solid var(--line);position:relative;overflow:hidden;transition:box-shadow .2s}
 .kpi:hover{box-shadow:var(--s2)}
-.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue));border-radius:var(--r2) var(--r2) 0 0}
-.kpi-l{font-size:9px;font-weight:600;color:var(--kc,var(--ink3));text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;opacity:.85}
-.kpi-v{font-size:22px;font-weight:600;color:var(--kc,var(--ink));font-family:'IBM Plex Mono',monospace;line-height:1}
-.kpi-s{font-size:10px;color:var(--ink3);margin-top:4px}
-.kpi-b{display:inline-block;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:600;margin-top:5px}
-.ok{background:var(--green-lt);color:var(--green)}.ng{background:var(--red-lt);color:var(--red)}.warn{background:var(--amber-lt);color:var(--amber)}.info{background:var(--blue-lt);color:var(--blue)}
+.kpi::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:var(--r2) 0 0 var(--r2)}
+.kpi-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.kpi-v{font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px}
+.kpi-s{font-size:10px;color:var(--ink3);line-height:1.4}
+.kpi-b{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:600;margin-top:5px}
+/* KPI colors */
+.kpi-blue::before{background:var(--blue)}.kpi-blue .kpi-l{color:var(--blue)}.kpi-blue .kpi-v{color:var(--blue)}
+.kpi-amber::before{background:var(--amber)}.kpi-amber .kpi-l{color:var(--amber)}.kpi-amber .kpi-v{color:var(--amber)}
+.kpi-purple::before{background:var(--purple)}.kpi-purple .kpi-l{color:var(--purple)}.kpi-purple .kpi-v{color:var(--purple)}
+.kpi-green::before{background:var(--green)}.kpi-green .kpi-l{color:var(--green)}.kpi-green .kpi-v{color:var(--green)}
+.kpi-red::before{background:var(--red)}.kpi-red .kpi-l{color:var(--red)}.kpi-red .kpi-v{color:var(--red)}
+.kpi-orange::before{background:var(--orange)}.kpi-orange .kpi-l{color:var(--orange)}.kpi-orange .kpi-v{color:var(--orange)}
+.kpi-teal::before{background:var(--teal)}.kpi-teal .kpi-l{color:var(--teal)}.kpi-teal .kpi-v{color:var(--teal)}
+/* badge colors */
+.b-ok{background:var(--green-lt);color:var(--green)}.b-ng{background:var(--red-lt);color:var(--red)}.b-warn{background:var(--amber-lt);color:var(--amber)}.b-info{background:var(--blue-lt);color:var(--blue)}
 
-/* ── CARD ── */
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);margin-bottom:16px;overflow:hidden;transition:box-shadow .2s}
-.card:hover{box-shadow:var(--s1)}
-.card-h{padding:12px 16px 10px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between}
-.card-t{font-size:12px;font-weight:600;color:var(--ink)}
-.card-s{font-size:10px;color:var(--ink3);margin-top:1px}
-.click-hint{font-size:9px;color:var(--blue);opacity:.65;margin-left:6px}
-.card-b{padding:14px 16px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);box-shadow:var(--s1);overflow:hidden;margin-bottom:14px}
+.card-h{padding:11px 14px 9px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:8px}
+.card-icon{font-size:14px}
+.card-t{font-size:12px;font-weight:600;flex:1}
+.card-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--line2);color:var(--ink3);white-space:nowrap}
+.card-actions{display:flex;gap:5px;align-items:center;margin-left:auto}
+.card-b{padding:12px 14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 
-/* ── ACCORDION (Target Manager) ── */
-.acc{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);margin-bottom:16px;overflow:hidden}
-.acc-hdr{padding:12px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:background .1s}
+/* ── TARGET ACCORDION ── */
+.acc{background:var(--white);border:1px solid var(--line);border-radius:var(--r2);box-shadow:var(--s1);margin-bottom:14px;overflow:hidden}
+.acc-hdr{padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:background .1s}
 .acc-hdr:hover{background:var(--line2)}
-.acc-hdr-t{font-size:12px;font-weight:600;color:var(--ink);flex:1}
-.acc-hdr-s{font-size:10px;color:var(--ink3)}
-.acc-arrow{font-size:10px;color:var(--ink3);transition:transform .2s}
-.acc-body{display:none;padding:14px 16px;border-top:1px solid var(--line2)}
+.acc-t{font-size:12px;font-weight:600;flex:1}
+.acc-sub{font-size:10px;color:var(--ink3)}
+.acc-arr{font-size:10px;color:var(--ink4);transition:transform .2s}
+.acc-arr.open{transform:rotate(180deg)}
+.acc-body{display:none;padding:12px 14px;border-top:1px solid var(--line2)}
 .acc-body.open{display:block}
-.acc-arrow.open{transform:rotate(180deg)}
-
-/* ── TARGET LINE ROWS ── */
-.tl-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
-.tl-row{display:flex;align-items:center;gap:8px;background:var(--line2);border-radius:var(--r);padding:8px 10px;flex-wrap:wrap}
-.tl-color{width:18px;height:18px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
-.ti{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;background:var(--white);transition:border-color .15s;color:var(--ink)}
-.ti:focus{border-color:var(--blue)}
-.ti-name{width:100px}.ti-val{width:115px;font-family:'IBM Plex Mono',monospace}
-.tl-sel{border:1px solid var(--line);border-radius:6px;padding:4px 7px;font-size:10px;font-family:inherit;background:var(--white);cursor:pointer;outline:none;color:var(--ink)}
-.tl-sel:focus{border-color:var(--blue)}
+.tl-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.tl-row{display:flex;align-items:center;gap:7px;background:var(--line2);border-radius:var(--r);padding:7px 10px;flex-wrap:wrap}
+.tl-swatch{width:16px;height:16px;border-radius:3px;flex-shrink:0}
+.ti{border:1px solid var(--line);border-radius:5px;padding:4px 7px;font-size:11px;font-family:inherit;outline:none;background:var(--white);color:var(--ink);transition:border-color .15s}
+.ti:focus{border-color:var(--blue2)}
+.ti-name{width:90px}.ti-val{width:110px;font-family:'IBM Plex Mono',monospace}
+.tl-sel{border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:10px;font-family:inherit;background:var(--white);cursor:pointer;outline:none;color:var(--ink)}
+input[type=color].tcp{width:26px;height:24px;border:1px solid var(--line);border-radius:3px;padding:1px;cursor:pointer;background:var(--white)}
 .tl-chk{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink2);cursor:pointer}
-input[type=color].tl-cp{width:28px;height:26px;border:1px solid var(--line);border-radius:4px;padding:1px;cursor:pointer;background:var(--white)}
-.add-tl{width:100%;padding:7px;border:1.5px dashed var(--blue-md);border-radius:var(--r);background:none;color:var(--blue);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.add-tl{width:100%;padding:6px;border:1.5px dashed var(--blue-md);border-radius:var(--r);background:none;color:var(--blue2);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
 .add-tl:hover{background:var(--blue-lt);border-style:solid}
+.tl-hint{font-size:10px;color:var(--ink3);margin-bottom:10px;line-height:1.6}
+.tl-hint code{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--line2);padding:1px 4px;border-radius:3px}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative}
+.chart-filter-hint{font-size:9px;color:var(--ink4);margin-top:3px;text-align:center}
+
+/* ── INSIGHT ── */
+.insight{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;padding:7px 11px;margin-bottom:10px;font-size:11px;line-height:1.5;color:var(--ink2)}
 
 /* ── TABLE ── */
-.tscroll{overflow-x:auto;max-height:400px;overflow-y:auto}
-.tscroll::-webkit-scrollbar{width:4px;height:4px}.tscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.tbl-scroll{overflow-x:auto;max-height:380px;overflow-y:auto}
+.tbl-scroll::-webkit-scrollbar{width:4px;height:4px}.tbl-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
 table{width:100%;border-collapse:collapse;font-size:11px}
-thead th{background:var(--line2);color:var(--ink3);padding:8px 11px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;cursor:pointer;white-space:nowrap;user-select:none}
+thead th{background:var(--line2);color:var(--ink3);padding:8px 10px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;cursor:pointer;white-space:nowrap;user-select:none;transition:color .1s}
 thead th:hover{color:var(--blue)}
-thead th.sa::after{content:' ↑';color:var(--blue)}thead th.sd::after{content:' ↓';color:var(--blue)}
+thead th.sa::after{content:' ↑';color:var(--blue2)}thead th.sd::after{content:' ↓';color:var(--blue2)}
 tbody tr{border-bottom:1px solid var(--line2);transition:background .1s}
-tbody tr:hover{background:var(--blue-lt)}
-tbody tr.rhi td{background:rgba(220,38,38,.03)}tbody tr.rno td{background:rgba(217,119,6,.03)}
-td{padding:7px 11px;vertical-align:middle}
+tbody tr:hover{background:#F8FAFF}
+tbody tr.hi td{background:#FFF8F8}
+td{padding:7px 10px;vertical-align:middle}
 .mono{font-family:'IBM Plex Mono',monospace;font-size:10px}
 .tar{text-align:right}
-.tag{display:inline-block;padding:1px 5px;border-radius:20px;font-size:8px;font-weight:700;margin-left:3px}
-.tag-h{background:var(--red-lt);color:var(--red)}.tag-n{background:var(--amber-lt);color:var(--amber)}.tag-ok{background:var(--green-lt);color:var(--green)}
-tfoot td{background:var(--line2);font-weight:600;padding:8px 11px;border-top:1px solid var(--line)}
+.tag{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700}
+.tag-high{background:var(--red-lt);color:var(--red)}.tag-new{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.tag-wait{background:var(--amber-lt);color:var(--amber)}.tag-done{background:var(--green-lt);color:var(--green)}
+tfoot td{background:var(--line2);font-weight:600;padding:8px 10px;border-top:1px solid var(--line);font-size:11px}
 
-/* ── SEARCH & PAGINATION ── */
-.sbar{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--line2)}
-.si{flex:1;background:var(--line2);border:1px solid transparent;border-radius:var(--r);padding:6px 11px;font-size:11px;font-family:inherit;outline:none;transition:all .15s}
-.si:focus{border-color:var(--blue);background:var(--white)}
+/* ── SEARCH + PAGINATION ── */
+.sbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line2)}
+.si{flex:1;background:var(--line2);border:1px solid transparent;border-radius:var(--r);padding:5px 10px 5px 28px;font-size:11px;font-family:inherit;outline:none;transition:all .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Ccircle cx='5' cy='5' r='4'/%3E%3Cpath d='M11 11L8 8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:8px center}
+.si:focus{border-color:var(--blue-md);background-color:var(--white)}
 .sct{font-size:10px;color:var(--ink3);white-space:nowrap}
-.pgn{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--line2);flex-wrap:wrap;gap:6px}
+.pgn{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--line2);flex-wrap:wrap;gap:5px}
 .pgi{font-size:10px;color:var(--ink3)}
-.pgb-wrap{display:flex;gap:2px}
-.pgb{background:var(--white);border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;color:var(--ink3);font-family:inherit;transition:all .1s;min-width:26px;text-align:center}
-.pgb:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.pgb.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}.pgb:disabled{opacity:.3;cursor:not-allowed}
+.pgb-w{display:flex;gap:2px}
+.pgb{background:var(--white);border:1px solid var(--line);border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;color:var(--ink3);font-family:inherit;transition:all .1s;min-width:24px;text-align:center}
+.pgb:hover:not(:disabled){border-color:var(--blue2);color:var(--blue2)}.pgb.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}.pgb:disabled{opacity:.3;cursor:not-allowed}
 
 /* ── SETUP ── */
-.setup-wrap{max-width:640px;margin:28px auto;padding:0 20px}
-.setup-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;margin-bottom:14px;box-shadow:var(--s1)}
-.setup-head{background:var(--blue);color:#fff;padding:18px 22px}
-.setup-head-t{font-size:14px;font-weight:600;margin-bottom:2px}
-.setup-head-s{font-size:11px;opacity:.8}
-.setup-body{padding:18px 22px}
-.gs-row{display:flex;gap:7px;align-items:center;margin-bottom:10px}
-.gs-in{flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r);font-size:12px;font-family:inherit;outline:none;transition:border-color .15s;background:var(--line2)}
-.gs-in:focus{border-color:var(--blue);background:var(--white)}
-.hint{font-size:10px;color:var(--ink3);line-height:1.7;background:var(--line2);padding:10px 12px;border-radius:var(--r);margin-bottom:10px;border-left:2px solid var(--blue-md)}
+.setup-wrap{max-width:600px;margin:24px auto;padding:0 20px}
+.setup-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;margin-bottom:12px;box-shadow:var(--s1)}
+.setup-head{padding:16px 20px;color:#fff}
+.setup-head-t{font-size:13px;font-weight:600;margin-bottom:2px}
+.setup-head-s{font-size:10px;opacity:.85}
+.setup-body{padding:16px 20px}
+.gs-row{display:flex;gap:6px;align-items:center;margin-bottom:9px}
+.gs-in{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:11px;font-family:inherit;outline:none;transition:border-color .15s;background:var(--line2)}
+.gs-in:focus{border-color:var(--blue2);background:var(--white)}
+.hint{font-size:10px;color:var(--ink3);line-height:1.7;background:var(--line2);padding:9px 11px;border-radius:var(--r);margin-bottom:9px;border-left:2px solid var(--blue-md)}
 .hint code{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--white);padding:1px 4px;border-radius:3px;color:var(--blue);border:1px solid var(--line)}
-.code-block{background:#0F172A;color:#CBD5E1;border-radius:var(--r);padding:12px;font-size:9.5px;font-family:'IBM Plex Mono',monospace;overflow:auto;max-height:200px;white-space:pre;line-height:1.6;margin:7px 0}
-.prog-wrap{margin:8px 0}
-.prog-track{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
-.prog-lbl{font-size:9px;color:var(--ink3);margin-top:3px;font-family:'IBM Plex Mono',monospace}
-.gs-st{font-size:10px;padding:3px 0}.gs-st.ok{color:var(--green)}.gs-st.err{color:var(--red)}.gs-st.ld{color:var(--blue)}
-.upload-zone{border:1.5px dashed var(--line);border-radius:var(--r2);padding:18px;text-align:center;cursor:pointer;transition:all .2s}
-.upload-zone:hover,.upload-zone.dz{border-color:var(--blue);background:var(--blue-lt)}
-.upload-t{font-size:12px;font-weight:500;margin-bottom:3px}.upload-s{font-size:10px;color:var(--ink3);margin-bottom:10px}
-.or-div{text-align:center;margin:12px 0;font-size:10px;color:var(--ink3);position:relative}
+.code-block{background:#0F172A;color:#CBD5E1;border-radius:var(--r);padding:11px;font-size:9.5px;font-family:'IBM Plex Mono',monospace;overflow:auto;max-height:190px;white-space:pre;line-height:1.6;margin:6px 0}
+.prog-wrap{margin:7px 0}
+.prog-track{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue2);border-radius:2px;transition:width .4s}
+.prog-lbl{font-size:9px;color:var(--ink3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.gs-st{font-size:10px;padding:2px 0}.gs-st.ok{color:var(--green)}.gs-st.err{color:var(--red)}.gs-st.ld{color:var(--blue2)}
+.upload-zone{border:1.5px dashed var(--line);border-radius:var(--r2);padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.dz{border-color:var(--blue2);background:var(--blue-lt)}
+.or-div{text-align:center;margin:10px 0;font-size:10px;color:var(--ink4);position:relative}
 .or-div::before,.or-div::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--line)}
 .or-div::before{left:0}.or-div::after{right:0}
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:var(--r);padding:7px 14px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
-.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:#1D4ED8}
-.btn-outline{background:var(--white);color:var(--blue);border:1px solid var(--blue)}.btn-outline:hover{background:var(--blue-lt)}
-.btn-ghost{background:none;color:var(--ink2);border:1px solid var(--line)}.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
-.btn-danger{background:none;color:var(--red);border:1px solid var(--red)}.btn-danger:hover{background:var(--red-lt)}
-.btn-sm{padding:4px 10px;font-size:10px}
-
 /* ── LOCK ── */
-.lock-overlay{position:fixed;inset:0;z-index:999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.lock-box{background:var(--white);border-radius:20px;padding:32px 36px;text-align:center;min-width:280px;box-shadow:var(--s3)}
-.lock-title{font-size:14px;font-weight:600;margin-bottom:4px}
-.lock-sub{font-size:11px;color:var(--ink3);margin-bottom:16px}
-.lock-dots{display:flex;gap:8px;justify-content:center;margin:14px 0}
-.ld{width:12px;height:12px;border-radius:50%;background:var(--line);transition:all .15s}
-.ld.on{background:var(--blue)}
-.ld.err{background:var(--red);animation:shake .3s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.pin-pad{display:grid;grid-template-columns:repeat(3,52px);gap:7px;justify-content:center;margin:12px 0}
-.pin-btn{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--white);font-size:16px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--ink);transition:all .12s}
-.pin-btn:hover{background:var(--blue-lt);border-color:var(--blue);color:var(--blue)}
-.pin-btn:active{transform:scale(.9)}
-
-/* ── SECTION HEADER ── */
-.sec{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:4px}
-.sec-t{font-size:13px;font-weight:600}
-.sec-s{font-size:10px;color:var(--ink3);margin-top:1px}
-
-/* ── INSIGHT ── */
-.insight{background:var(--blue-lt);border-left:2px solid var(--blue);border-radius:0 var(--r) var(--r) 0;padding:8px 12px;margin-bottom:10px;font-size:11px;line-height:1.6;color:var(--ink2)}
+.lock-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.lock-box{background:var(--white);border-radius:16px;padding:28px 32px;text-align:center;min-width:270px;box-shadow:var(--s3)}
+.lock-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.lock-sub{font-size:11px;color:var(--ink3);margin-bottom:12px}
+.lock-dots{display:flex;gap:7px;justify-content:center;margin:12px 0}
+.ld{width:11px;height:11px;border-radius:50%;background:var(--line);transition:all .15s}
+.ld.on{background:var(--blue)}.ld.err{background:var(--red);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,48px);gap:6px;justify-content:center;margin:10px 0}
+.pin-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--white);font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--ink);transition:all .1s}
+.pin-btn:hover{background:var(--blue-lt);border-color:var(--blue-md)}.pin-btn:active{transform:scale(.92)}
 
 /* ── EMPTY ── */
-.empty{padding:56px 20px;text-align:center;color:var(--ink3)}
-.empty-ico{font-size:40px;margin-bottom:12px;opacity:.35}
-.empty-t{font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:4px}
-.empty-s{font-size:11px}
+.empty{padding:52px 20px;text-align:center;color:var(--ink3)}
+.empty-ico{font-size:36px;opacity:.3;margin-bottom:10px}.empty-t{font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:3px}.empty-s{font-size:11px}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.kpi{animation:fadeUp .25s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeIn .25s ease both}
 .kpi:nth-child(1){animation-delay:.02s}.kpi:nth-child(2){animation-delay:.04s}.kpi:nth-child(3){animation-delay:.06s}
 .kpi:nth-child(4){animation-delay:.08s}.kpi:nth-child(5){animation-delay:.10s}.kpi:nth-child(6){animation-delay:.12s}
-@media(max-width:880px){.g2,.g3{grid-template-columns:1fr}.content{padding:12px 14px}}
-@media(max-width:480px){.kpi-row{grid-template-columns:1fr 1fr}}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}.content{padding:12px 14px}.kpi-row{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <span class="bar-logo" id="logo" onclick="logoClick()">📊</span>
-  <div class="bar-title">Loss Dashboard<span class="bar-sub">Replan & Add Paper</span></div>
-  <div id="appStatus" class="status-pill">ยังไม่มีข้อมูล</div>
+<!-- ══ STICKY HEADER ══ -->
+<header class="header">
+  <div class="header-top">
+    <div class="logo-box" id="logo" onclick="logoClick()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v18H3z" fill="rgba(255,255,255,.2)"/><path d="M7 17V13M12 17V7M17 17V11" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="header-titles">
+      <div class="header-title">Replan Performance &amp; <span>Loss</span> Overview</div>
+      <div class="header-sub">Summary of replan value and cost impact by process</div>
+    </div>
+    <div class="header-right">
+      <strong id="hdr-src">Google Sheets</strong>
+      <span id="hdr-ts">Data Update</span>
+    </div>
+  </div>
+  <div class="fbar">
+    <div class="fg"><span class="fl">Year</span><select class="fsel" id="rp-fy" onchange="rpF()"></select></div>
+    <div class="fg"><span class="fl">Month</span><select class="fsel" id="rp-fm" onchange="rpF()"></select></div>
+    <div class="fg"><span class="fl">Department</span><select class="fsel" id="rp-fd" onchange="rpF()"></select></div>
+    <div class="fg"><span class="fl">Machine</span><select class="fsel" id="rp-fmc" onchange="rpF()"></select></div>
+    <div class="fg"><span class="fl">Problem</span><select class="fsel" id="rp-fpb" onchange="rpF()"></select></div>
+    <div class="fbar-actions">
+      <button class="btn btn-reset" onclick="rpRst()">↺ Reset</button>
+      <button class="btn btn-update" id="btn-update" onclick="refreshRP()">↺ อัปเดตข้อมูล</button>
+      <div class="status-dot" id="status-dot"></div>
+    </div>
+  </div>
+  <div class="tabs" style="position:relative;top:0">
+    <div class="tab active" id="tab-rp" onclick="sw('rp')">📋 Replan Loss</div>
+    <div class="tab" id="tab-ap" onclick="sw('ap')">📄 Add Paper</div>
+    <div class="tab" id="tab-cfg" onclick="sw('cfg')">⚙️ ตั้งค่า</div>
+  </div>
 </header>
 
-<nav class="tabs">
-  <div class="tab active" id="tab-rp" onclick="sw('rp')">🔄 Replan</div>
-  <div class="tab" id="tab-ap" onclick="sw('ap')">📄 Add Paper</div>
-  <div class="tab" id="tab-cfg" onclick="sw('cfg')">⚙️ ตั้งค่า</div>
-</nav>
-
-<!-- ══ REPLAN ══ -->
+<!-- ══ REPLAN PAGE ══ -->
 <div class="page active" id="page-rp">
   <div id="rp-nodata"><div class="setup-wrap" id="rp-nd"></div></div>
   <div id="rp-setup" style="display:none"><div class="setup-wrap" id="rp-si"></div></div>
   <div id="rp-live" style="display:none">
-    <div class="rbar">
-      <button class="btn btn-blue btn-sm" onclick="refreshRP()">↺ Refresh</button>
-      <span id="rp-src"></span>
-      <span class="spacer"></span>
-      <span class="ts" id="rp-ts"></span>
-      <button class="btn btn-ghost btn-sm" id="rp-chg" style="display:none" onclick="showSetup('rp')">เปลี่ยนแหล่งข้อมูล</button>
-    </div>
-    <div class="fbar">
-      <div class="fg"><span class="fl">ปี</span><select class="fsel" id="rp-fy" onchange="rpF()"></select></div>
-      <div class="fg"><span class="fl">เดือน</span><select class="fsel" id="rp-fm" onchange="rpF()"></select></div>
-      <div class="fg"><span class="fl">Machine</span><select class="fsel" id="rp-fmc" onchange="rpF()"></select></div>
-      <div class="fg"><span class="fl">Problem</span><select class="fsel" id="rp-fpb" onchange="rpF()"></select></div>
-      <div class="fg"><span class="fl">แผนก</span><select class="fsel" id="rp-fd" onchange="rpF()"></select></div>
-      <div class="fg"><span class="fl">โรงงาน</span><select class="fsel" id="rp-ff" onchange="rpF()"></select></div>
-      <button class="btn btn-ghost btn-sm" onclick="rpRst()">↺ Reset</button>
-      <div class="chips" id="rp-chips"></div>
-    </div>
     <div class="content" id="rp-content"></div>
   </div>
 </div>
 
-<!-- ══ ADD PAPER ══ -->
+<!-- ══ ADD PAPER PAGE ══ -->
 <div class="page" id="page-ap">
   <div id="ap-nodata"><div class="setup-wrap" id="ap-nd"></div></div>
   <div id="ap-setup" style="display:none"><div class="setup-wrap" id="ap-si"></div></div>
   <div id="ap-live" style="display:none">
-    <div class="rbar">
-      <button class="btn btn-blue btn-sm" onclick="refreshAP()">↺ Refresh</button>
-      <span id="ap-src"></span>
-      <span class="spacer"></span>
-      <span class="ts" id="ap-ts"></span>
-      <button class="btn btn-ghost btn-sm" id="ap-chg" style="display:none" onclick="showSetup('ap')">เปลี่ยนแหล่งข้อมูล</button>
+    <!-- AP has its own filter row inside content -->
+    <div class="content">
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--s1)">
+        <div class="fg"><span class="fl">Year</span><select class="fsel" id="ap-fy" onchange="apF()"></select></div>
+        <div class="fg"><span class="fl">Month</span><select class="fsel" id="ap-fm" onchange="apF()"></select></div>
+        <div class="fg"><span class="fl">Department</span><select class="fsel" id="ap-fd" onchange="apF()"></select></div>
+        <div class="fg"><span class="fl">Factory</span><select class="fsel" id="ap-ff" onchange="apF()"></select></div>
+        <button class="btn btn-reset" style="align-self:flex-end" onclick="apRst()">↺ Reset</button>
+        <button class="btn btn-ghost" style="align-self:flex-end" onclick="refreshAP()">↺ Refresh</button>
+        <button class="btn btn-ghost" id="ap-chg" style="display:none;align-self:flex-end" onclick="showSetup('ap')">เปลี่ยนแหล่งข้อมูล</button>
+      </div>
     </div>
-    <div class="fbar">
-      <div class="fg"><span class="fl">ปี</span><select class="fsel" id="ap-fy" onchange="apF()"></select></div>
-      <div class="fg"><span class="fl">เดือน</span><select class="fsel" id="ap-fm" onchange="apF()"></select></div>
-      <div class="fg"><span class="fl">แผนก</span><select class="fsel" id="ap-fd" onchange="apF()"></select></div>
-      <div class="fg"><span class="fl">โรงงาน</span><select class="fsel" id="ap-ff" onchange="apF()"></select></div>
-      <button class="btn btn-ghost btn-sm" onclick="apRst()">↺ Reset</button>
-      <div class="chips" id="ap-chips"></div>
-    </div>
-    <div class="content" id="ap-content"></div>
+    <div class="content" id="ap-content" style="padding-top:0"></div>
   </div>
 </div>
 
-<!-- ══ CONFIG ══ -->
+<!-- ══ CONFIG PAGE ══ -->
 <div class="page" id="page-cfg">
-  <div class="content" style="max-width:660px">
-    <div style="padding-top:6px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
-      <div><div style="font-size:15px;font-weight:600">⚙️ ตั้งค่า</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">แหล่งข้อมูล, Target Lines, PIN</div></div>
-      <button class="btn btn-danger btn-sm" onclick="lockCfg()">🔒 ล็อก</button>
+  <div class="content" style="max-width:640px">
+    <div style="padding-top:6px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:15px;font-weight:700">⚙️ ตั้งค่า Dashboard</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">แหล่งข้อมูล, Target Lines, PIN</div></div>
+      <button class="btn btn-reset" onclick="lockCfg()" style="font-size:11px">🔒 ล็อก</button>
     </div>
     <div id="cfg-body"></div>
   </div>
 </div>
 
-<!-- LOCK -->
+<!-- LOCK OVERLAY -->
 <div class="lock-overlay" id="lockOv" style="display:none">
   <div class="lock-box">
-    <div style="font-size:32px;margin-bottom:8px">🔒</div>
+    <div style="font-size:28px;margin-bottom:8px">🔒</div>
     <div class="lock-title">ยืนยันตัวตน</div>
     <div class="lock-sub" id="lock-sub">กรอก PIN 4 หลัก</div>
     <div class="lock-dots"><div class="ld" id="ld0"></div><div class="ld" id="ld1"></div><div class="ld" id="ld2"></div><div class="ld" id="ld3"></div></div>
@@ -297,60 +309,25 @@ tfoot td{background:var(--line2);font-weight:600;padding:8px 11px;border-top:1px
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// MACHINE → DEPT/PROCESS/FACTORY MAP
-// ═══════════════════════════════════════
-const MC_MAP = {};
-[
-['BI01','PR1','PR','Factory1'],['BI201','PR2','IS','Factory2'],['BI201','PR2','SG','Factory2'],['BI201','PR2','BI','Factory2'],
-['BM','TDC','BM','Factory3'],['BT01','CON1','BT','Factory1'],['CA01','CON1','CA','Factory1'],['CA02','CON1','CA','Factory1'],
-['CA03','CON1','CA','Factory1'],['CM','TDC','CM','Factory3'],['DC04','CON1','DC','Factory1'],['DC05','CON1','DC','Factory1'],
-['DC06','CON1','DC','Factory1'],['DC09','CON1','DC','Factory1'],['DC10','CON1','DC','Factory1'],['DC12','CON1','DC','Factory1'],
-['DC13','CON1','DC','Factory1'],['DC14','CON1','DC','Factory1'],['DC15','CON1','DC','Factory1'],['DC16','CON1','DC','Factory1'],
-['DC201','CON2','DC','Factory2'],['DC202','CON2','DC','Factory2'],['DC203','CON2','DC','Factory2'],['DC204','CON2','DC','Factory2'],
-['DC205','CON2','DC','Factory2'],['DC206','CON2','DC','Factory2'],['F3','F3','Assm','Factory3'],['FM201','CON2','FM','Factory2'],
-['GF01','GL','GF','Factory1'],['GH','GL','GH','Factory1'],['GL01','GL','GL','Factory1'],['GL02','GL','GL','Factory1'],
-['GL03','GL','GL','Factory1'],['GL04','GL','GL','Factory1'],['GL05','GL','GL','Factory1'],['GL10','GL','GL','Factory1'],
-['GL11','GL','GL','Factory1'],['GL12','GL','GL','Factory1'],['GL13','GL','GL','Factory1'],['GL14','GL','GL','Factory1'],
-['GL201','CON2','GL','Factory2'],['GL202','CON2','GL','Factory2'],['GL203','CON2','GL','Factory2'],['GL204','CON2','GL','Factory2'],
-['GL205','CON2','GL','Factory2'],['GL206','CON2','GL','Factory2'],['GL207','CON2','GL','Factory2'],['GL208','CON2','GL','Factory2'],
-['GPF1','GL','GP','Factory1'],['GPF2','CON2','GP','Factory2'],['GS05','PE','GS','Factory1'],['GS202','PR2','GS','Factory2'],
-['GS301','TDC','GS','Factory3'],['GSB301','TDC','GSB','Factory3'],['HS02','CON1','HS','Factory1'],['HS04','CON1','HS','Factory1'],
-['HS201','CON2','HS','Factory2'],['INKF1','GL','INK','Factory1'],['IS01','PR1','PR','Factory1'],['IS02','PR1','PR','Factory1'],
-['IS201','PR2','IS','Factory2'],['IS202','PR2','IS','Factory2'],['LA01','CON1','LA','Factory1'],['LA02','CON1','LA','Factory1'],
-['LA03','CON1','LA','Factory1'],['LA05','CON1','LA','Factory1'],['MM301','TDC','MM','Factory3'],['MSTF1','CON1','ST','Factory1'],
-['MSTF2','CON2','ST','Factory2'],['PCH301','TDC','PCH','Factory3'],['PCH302','TDC','PCH','Factory3'],['PL301','TDC','PL','Factory3'],
-['PL302','TDC','PL','Factory3'],['PL303','TDC','PL','Factory3'],['PRT03','PR1','PR','Factory1'],['PRT08','PR1','PR','Factory1'],
-['PRT09','PR1','PR','Factory1'],['PRT10','PR1','PR','Factory1'],['PRT15','PR1','PR','Factory1'],['PRT16','PR1','PR','Factory1'],
-['PRT17','PR1','PR','Factory1'],['PRT201','PR2','PR','Factory2'],['PRT202','PR2','PR','Factory2'],['PRT203','PR2','PR','Factory2'],
-['PRT204','PR2','PR','Factory2'],['PRT205','PR2','PR','Factory2'],['RA','TDC','RA','Factory3'],['RF','TDC','RF','Factory3'],
-['RM','TDC','RM','Factory3'],['SC01','PE','SC','Factory1'],['SG01','PR1','PR','Factory1'],['SGF2','PR2','SG','Factory2'],
-['SH301','TDC','SH','Factory3'],['SH302','TDC','SH','Factory3'],['SP01','PR1','PR','Factory1'],['SP201','PR2','IS','Factory2'],
-['SPF2','PR2','SP','Factory2'],['SS','TDC','SS','Factory3'],['ST01','CON1','ST','Factory1'],['ST03','CON1','ST','Factory1'],
-['ST04','CON1','ST','Factory1'],['ST201','CON2','ST','Factory2'],['ST203','CON2','ST','Factory2'],['ST204','CON2','ST','Factory2'],
-['WD02','GL','WD','Factory1'],['WD201','CON2','WD','Factory2'],['OUTPR','PR1','PR','Factory1']
+// ══════════════════════════════════════
+// MACHINE MAP
+// ══════════════════════════════════════
+const MC_MAP={};
+[['BI01','PR1','PR','Factory1'],['BI201','PR2','IS','Factory2'],['BI201','PR2','SG','Factory2'],['BI201','PR2','BI','Factory2'],['BM','TDC','BM','Factory3'],['BT01','CON1','BT','Factory1'],['CA01','CON1','CA','Factory1'],['CA02','CON1','CA','Factory1'],['CA03','CON1','CA','Factory1'],['CM','TDC','CM','Factory3'],['DC04','CON1','DC','Factory1'],['DC05','CON1','DC','Factory1'],['DC06','CON1','DC','Factory1'],['DC09','CON1','DC','Factory1'],['DC10','CON1','DC','Factory1'],['DC12','CON1','DC','Factory1'],['DC13','CON1','DC','Factory1'],['DC14','CON1','DC','Factory1'],['DC15','CON1','DC','Factory1'],['DC16','CON1','DC','Factory1'],['DC201','CON2','DC','Factory2'],['DC202','CON2','DC','Factory2'],['DC203','CON2','DC','Factory2'],['DC204','CON2','DC','Factory2'],['DC205','CON2','DC','Factory2'],['DC206','CON2','DC','Factory2'],['F3','F3','Assm','Factory3'],['FM201','CON2','FM','Factory2'],['GF01','GL','GF','Factory1'],['GH','GL','GH','Factory1'],['GL01','GL','GL','Factory1'],['GL02','GL','GL','Factory1'],['GL03','GL','GL','Factory1'],['GL04','GL','GL','Factory1'],['GL05','GL','GL','Factory1'],['GL10','GL','GL','Factory1'],['GL11','GL','GL','Factory1'],['GL12','GL','GL','Factory1'],['GL13','GL','GL','Factory1'],['GL14','GL','GL','Factory1'],['GL201','CON2','GL','Factory2'],['GL202','CON2','GL','Factory2'],['GL203','CON2','GL','Factory2'],['GL204','CON2','GL','Factory2'],['GL205','CON2','GL','Factory2'],['GL206','CON2','GL','Factory2'],['GL207','CON2','GL','Factory2'],['GL208','CON2','GL','Factory2'],['GPF1','GL','GP','Factory1'],['GPF2','CON2','GP','Factory2'],['GS05','PE','GS','Factory1'],['GS202','PR2','GS','Factory2'],['GS301','TDC','GS','Factory3'],['GSB301','TDC','GSB','Factory3'],['HS02','CON1','HS','Factory1'],['HS04','CON1','HS','Factory1'],['HS201','CON2','HS','Factory2'],['INKF1','GL','INK','Factory1'],['IS01','PR1','PR','Factory1'],['IS02','PR1','PR','Factory1'],['IS201','PR2','IS','Factory2'],['IS202','PR2','IS','Factory2'],['LA01','CON1','LA','Factory1'],['LA02','CON1','LA','Factory1'],['LA03','CON1','LA','Factory1'],['LA05','CON1','LA','Factory1'],['MM301','TDC','MM','Factory3'],['MSTF1','CON1','ST','Factory1'],['MSTF2','CON2','ST','Factory2'],['PCH301','TDC','PCH','Factory3'],['PCH302','TDC','PCH','Factory3'],['PL301','TDC','PL','Factory3'],['PL302','TDC','PL','Factory3'],['PL303','TDC','PL','Factory3'],['PRT03','PR1','PR','Factory1'],['PRT08','PR1','PR','Factory1'],['PRT09','PR1','PR','Factory1'],['PRT10','PR1','PR','Factory1'],['PRT15','PR1','PR','Factory1'],['PRT16','PR1','PR','Factory1'],['PRT17','PR1','PR','Factory1'],['PRT201','PR2','PR','Factory2'],['PRT202','PR2','PR','Factory2'],['PRT203','PR2','PR','Factory2'],['PRT204','PR2','PR','Factory2'],['PRT205','PR2','PR','Factory2'],['RA','TDC','RA','Factory3'],['RF','TDC','RF','Factory3'],['RM','TDC','RM','Factory3'],['SC01','PE','SC','Factory1'],['SG01','PR1','PR','Factory1'],['SGF2','PR2','SG','Factory2'],['SH301','TDC','SH','Factory3'],['SH302','TDC','SH','Factory3'],['SP01','PR1','PR','Factory1'],['SP201','PR2','IS','Factory2'],['SPF2','PR2','SP','Factory2'],['SS','TDC','SS','Factory3'],['ST01','CON1','ST','Factory1'],['ST03','CON1','ST','Factory1'],['ST04','CON1','ST','Factory1'],['ST201','CON2','ST','Factory2'],['ST203','CON2','ST','Factory2'],['ST204','CON2','ST','Factory2'],['WD02','GL','WD','Factory1'],['WD201','CON2','WD','Factory2'],['OUTPR','PR1','PR','Factory1']
 ].forEach(([mc,dept,proc,fac])=>{if(!MC_MAP[mc])MC_MAP[mc]={dept,proc,fac};});
+function mcL(mc){return MC_MAP[mc]||{dept:'OTHER',proc:'OTHER',fac:'OTHER'};}
 
-function mcLookup(mc){return MC_MAP[mc]||{dept:'OTHER',proc:'OTHER',fac:'OTHER'};}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // CONSTANTS
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 const MN=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const MN_EN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const f=n=>isNaN(n)?'—':Math.round(n).toLocaleString('th-TH');
 const fB=n=>{const a=Math.abs(n);if(a>=1e6)return(n/1e6).toFixed(2)+'M';if(a>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();};
 const CHS={};
 function dc(k){if(CHS[k]){try{CHS[k].destroy();}catch(e){}delete CHS[k];}}
 const DEFAULT_PIN='1234';
 const PAGE=50;
-
-// Data state
-const RP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:''};
-const AP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:''};
-
-// ═══════════════════════════════════════
-// GS CODE
-// ═══════════════════════════════════════
 const GS_CODE=`function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheetName = (e&&e.parameter&&e.parameter.sheet)||'Replan';
@@ -359,67 +336,22 @@ const GS_CODE=`function doGet(e) {
   var pageSize = 5000;
   var all = sh.getDataRange().getValues();
   var totalRows = all.length-1;
-  var rows = page===0 ? all.slice(0,Math.min(1+pageSize,all.length))
-                      : all.slice(1+page*pageSize, Math.min(1+(page+1)*pageSize,all.length));
-  return ContentService.createTextOutput(JSON.stringify({
-    data:rows, totalRows:totalRows, pageSize:pageSize, page:page, sheet:sheetName
-  })).setMimeType(ContentService.MimeType.JSON);
+  var rows = page===0?all.slice(0,Math.min(1+pageSize,all.length)):all.slice(1+page*pageSize,Math.min(1+(page+1)*pageSize,all.length));
+  return ContentService.createTextOutput(JSON.stringify({data:rows,totalRows:totalRows,pageSize:pageSize,page:page,sheet:sheetName})).setMimeType(ContentService.MimeType.JSON);
 }`;
 
-// ═══════════════════════════════════════
-// TARGET LINES — stored in GS Config Sheet
-// ═══════════════════════════════════════
-// Cache in memory, load from GS on init
-let TL = {rp:[], ap:[], loaded:false};
+const RP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:'',src:null,ts:null,chartSel:{}};
+const AP={all:[],fil:[],srt:{c:'val',d:-1},pg:0,q:'',src:null,ts:null};
+let TL={rp:[{id:1,name:'Target',val:500000,color:'#DC2626',dash:'solid',curve:'step',show:true}],ap:[{id:1,name:'Target',val:400000,color:'#7C3AED',dash:'dashed',curve:'step',show:true}]};
 
-const TL_DEFAULTS = {
-  rp:[{id:1,name:'Target',val:500000,color:'#2563EB',dash:'dashed',curve:'step',show:true}],
-  ap:[{id:1,name:'Target',val:400000,color:'#7C3AED',dash:'dashed',curve:'step',show:true}]
-};
-
-async function loadTargetLines(){
-  const url = (localStorage.getItem('gs_url')||'').trim();
-  if(!url){TL.rp=JSON.parse(localStorage.getItem('tl_rp')||'null')||TL_DEFAULTS.rp;TL.ap=JSON.parse(localStorage.getItem('tl_ap')||'null')||TL_DEFAULTS.ap;TL.loaded=true;return;}
-  try{
-    const res = await fetch(`${url}?sheet=Config`);
-    const d = await res.json();
-    if(d.data&&d.data.length>1){
-      const hdrs=d.data[0];
-      const rows=d.data.slice(1);
-      const get=(r,h)=>r[hdrs.findIndex(x=>String(x).toLowerCase()===h.toLowerCase())]??'';
-      const rpLines=[],apLines=[];
-      rows.forEach(r=>{
-        const tab=String(get(r,'tab')).toLowerCase();
-        const ln={id:Date.now()+Math.random(),name:String(get(r,'name')||'Target'),val:parseFloat(get(r,'val'))||0,color:String(get(r,'color')||'#2563EB'),dash:String(get(r,'dash')||'dashed'),curve:String(get(r,'curve')||'step'),show:String(get(r,'show')).toLowerCase()!=='false'};
-        if(tab==='rp'||tab==='replan')rpLines.push(ln);
-        if(tab==='ap'||tab==='addpaper')apLines.push(ln);
-      });
-      TL.rp=rpLines.length?rpLines:TL_DEFAULTS.rp;
-      TL.ap=apLines.length?apLines:TL_DEFAULTS.ap;
-    } else {
-      TL.rp=TL_DEFAULTS.rp;TL.ap=TL_DEFAULTS.ap;
-    }
-  }catch{TL.rp=JSON.parse(localStorage.getItem('tl_rp')||'null')||TL_DEFAULTS.rp;TL.ap=JSON.parse(localStorage.getItem('tl_ap')||'null')||TL_DEFAULTS.ap;}
-  TL.loaded=true;
-}
-
-// Save target lines to localStorage (fallback if no GS)
-function saveTL(k){localStorage.setItem(`tl_${k}`,JSON.stringify(TL[k]));}
-
-// ═══════════════════════════════════════
-// LOGO CLICK — 5x unlock
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
+// LOGO / PIN / LOCK
+// ══════════════════════════════════════
 let lClicks=0,lTimer=null;
 function logoClick(){
-  const el=document.getElementById('logo');
-  el.style.background='var(--blue-lt)';setTimeout(()=>el.style.background='',200);
   lClicks++;clearTimeout(lTimer);lTimer=setTimeout(()=>{lClicks=0;},2000);
   if(lClicks>=5){lClicks=0;openLock();}
 }
-
-// ═══════════════════════════════════════
-// PIN
-// ═══════════════════════════════════════
 let pinBuf=[],cfgOn=false;
 function openLock(){pinBuf=[];updDots('');document.getElementById('lock-sub').textContent='กรอก PIN 4 หลัก';document.getElementById('lockOv').style.display='flex';}
 function closeLock(){document.getElementById('lockOv').style.display='none';pinBuf=[];}
@@ -427,24 +359,28 @@ function pp(n){
   if(pinBuf.length>=4)return;pinBuf.push(String(n));updDots('');
   if(pinBuf.length===4){
     const pin=localStorage.getItem('dash_pin')||DEFAULT_PIN;
-    if(pinBuf.join('')===pin){cfgOn=true;document.getElementById('tab-cfg').classList.add('on');['rp-chg','ap-chg'].forEach(id=>document.getElementById(id).style.display='');closeLock();sw('cfg');}
+    if(pinBuf.join('')===pin){cfgOn=true;document.getElementById('tab-cfg').classList.add('on');document.getElementById('ap-chg').style.display='';document.getElementById('rp-chg-btn')&&(document.getElementById('rp-chg-btn').style.display='');closeLock();sw('cfg');}
     else{updDots('err');document.getElementById('lock-sub').textContent='PIN ไม่ถูกต้อง';setTimeout(()=>{pinBuf=[];updDots('');},700);}
   }
 }
 function pbk(){if(pinBuf.length)pinBuf.pop();updDots('');}
 function updDots(s){for(let i=0;i<4;i++){const d=document.getElementById('ld'+i);d.className='ld'+(i<pinBuf.length?' on':'')+(s==='err'?' err':'');}}
-function lockCfg(){cfgOn=false;document.getElementById('tab-cfg').classList.remove('on');['rp-chg','ap-chg'].forEach(id=>document.getElementById(id).style.display='none');sw('rp');}
+function lockCfg(){cfgOn=false;document.getElementById('tab-cfg').classList.remove('on');sw('rp');}
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded',async()=>{
+  // Load saved TL
+  try{const s=localStorage.getItem('tl_rp');if(s)TL.rp=JSON.parse(s);}catch{}
+  try{const s=localStorage.getItem('tl_ap');if(s)TL.ap=JSON.parse(s);}catch{}
   renderSetup('rp',document.getElementById('rp-nd'),false);
   renderSetup('ap',document.getElementById('ap-nd'),false);
-  await loadTargetLines();
   const url=localStorage.getItem('gs_url')||'';
-  if(url&&localStorage.getItem('rp_src')==='gs')autoGS('rp',url);
-  if(url&&localStorage.getItem('ap_src')==='gs')autoGS('ap',url);
+  if(url&&localStorage.getItem('rp_src')==='gs'){await autoGS('rp',url);}
+  if(url&&localStorage.getItem('ap_src')==='gs'){await autoGS('ap',url);}
+  // Try load TL from GS Config
+  if(url)loadTLfromGS(url);
   updStatus();
 });
 
@@ -459,10 +395,11 @@ function sw(t){
 
 function updStatus(){
   const rn=RP.all.length,an=AP.all.length;
-  const el=document.getElementById('appStatus');
-  if(!rn&&!an){el.className='status-pill';el.textContent='ยังไม่มีข้อมูล';return;}
-  const p=[];if(rn)p.push(`RP: ${rn.toLocaleString()}`);if(an)p.push(`AP: ${an.toLocaleString()}`);
-  el.className='status-pill live';el.textContent=p.join(' | ');
+  const dot=document.getElementById('status-dot');
+  if(rn||an){dot.classList.add('live');}
+  const ts=RP.ts||AP.ts;
+  if(ts){document.getElementById('hdr-ts').textContent=ts.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit'});}
+  if(RP.src){document.getElementById('hdr-src').textContent=RP.src.type==='gs'?'Google Sheets':'Excel File';}
 }
 
 function showSetup(k){
@@ -473,33 +410,35 @@ function showSetup(k){
   renderSetup(k,document.getElementById(`${k}-si`),true);
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // SETUP PANEL
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
+const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function toggleEl(id){const e=document.getElementById(id);if(e)e.style.display=e.style.display==='none'?'block':'none';}
+function cpTxt(id){navigator.clipboard?.writeText(document.getElementById(id)?.textContent||'').then(()=>alert('Copy แล้วครับ!'));}
+
 function renderSetup(k,con,_){
   const sn=k==='rp'?'Replan':'Addpaper';
   const su=localStorage.getItem('gs_url')||'';
+  const hdrBg=k==='rp'?'background:#1D4ED8':'background:#7C3AED';
   con.innerHTML=`
   <div class="setup-card">
-    <div class="setup-head" style="${k==='ap'?'background:#7C3AED':''}">
-      <div class="setup-head-t">${k==='rp'?'🔄 Replan':'📄 Add Paper'}</div>
-      <div class="setup-head-s">Sheet: "${sn}" — เลือกแหล่งข้อมูล</div>
+    <div class="setup-head" style="${hdrBg}">
+      <div class="setup-head-t">${k==='rp'?'🔄 Replan':'📄 Add Paper'} — แหล่งข้อมูล</div>
+      <div class="setup-head-s">Sheet: "${sn}"</div>
     </div>
     <div class="setup-body">
-      <div style="font-size:12px;font-weight:600;margin-bottom:8px">🔗 Google Sheets</div>
-      <div class="hint">
-        <strong>ตั้งค่าครั้งเดียว:</strong> Extensions → Apps Script → วางโค้ด → Deploy → Web App (Anyone)<br>
-        สำหรับ Target Lines เพิ่ม Sheet ชื่อ <code>Config</code> columns: <code>tab</code> <code>name</code> <code>val</code> <code>color</code> <code>dash</code> <code>curve</code> <code>show</code>
-      </div>
-      <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="toggleEl('${k}-cb')">ดู Apps Script Code</button>
-        <button class="btn btn-ghost btn-sm" onclick="cpTxt('${k}-ct')">Copy Code</button>
+      <div style="font-size:11px;font-weight:600;margin-bottom:7px">🔗 Google Sheets</div>
+      <div class="hint">Extensions → Apps Script → วางโค้ด → Deploy → Web App (Anyone)<br>
+      Sheet <code>Config</code>: columns <code>tab</code> <code>name</code> <code>val</code> <code>color</code> <code>dash</code> <code>curve</code> <code>show</code></div>
+      <div style="margin-bottom:7px;display:flex;gap:5px">
+        <button class="btn btn-ghost" onclick="toggleEl('${k}-cb')" style="font-size:10px">ดู Code</button>
+        <button class="btn btn-ghost" onclick="cpTxt('${k}-ct')" style="font-size:10px">Copy</button>
       </div>
       <div id="${k}-cb" style="display:none"><div class="code-block" id="${k}-ct">${escH(GS_CODE)}</div></div>
       <div class="gs-row">
-        <input class="gs-in" id="${k}-gsu" placeholder="https://script.google.com/macros/s/…/exec" value="${escH(su)}"
-          oninput="localStorage.setItem('gs_url',this.value)">
-        <button class="btn btn-blue" onclick="loadGS('${k}')">โหลด</button>
+        <input class="gs-in" id="${k}-gsu" placeholder="https://script.google.com/macros/s/…/exec" value="${escH(su)}" oninput="localStorage.setItem('gs_url',this.value)">
+        <button class="btn btn-blue" onclick="loadGS('${k}')" style="font-size:11px;padding:7px 12px">โหลด</button>
       </div>
       <div id="${k}-prog" style="display:none" class="prog-wrap">
         <div class="prog-track"><div class="prog-fill" id="${k}-pf" style="width:5%"></div></div>
@@ -507,101 +446,99 @@ function renderSetup(k,con,_){
       </div>
       <div class="gs-st" id="${k}-st"></div>
       <div class="or-div">หรือ</div>
-      <div style="font-size:12px;font-weight:600;margin-bottom:8px">📂 อัปโหลด Excel</div>
-      <div class="upload-zone" id="${k}-dz"
-        onclick="document.getElementById('${k}-fi').click()"
-        ondragover="dzO(event,'${k}-dz')" ondragleave="dzL('${k}-dz')" ondrop="dzD(event,'${k}')">
-        <div class="upload-t">ลากไฟล์ .xlsx มาวางที่นี่</div>
-        <div class="upload-s">อ่าน Sheet "${sn}" อัตโนมัติ</div>
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();document.getElementById('${k}-fi').click()">เลือกไฟล์</button>
+      <div style="font-size:11px;font-weight:600;margin-bottom:7px">📂 Excel</div>
+      <div class="upload-zone" id="${k}-dz" onclick="document.getElementById('${k}-fi').click()" ondragover="dzO(event,'${k}-dz')" ondragleave="dzL('${k}-dz')" ondrop="dzD(event,'${k}')">
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px">ลากไฟล์ .xlsx มาวางที่นี่</div>
+        <div style="font-size:10px;color:var(--ink3);margin-bottom:9px">Sheet "${sn}" อัตโนมัติ</div>
+        <button class="btn btn-ghost" onclick="event.stopPropagation();document.getElementById('${k}-fi').click()" style="font-size:10px">เลือกไฟล์</button>
       </div>
-      <input type="file" id="${k}-fi" accept=".xlsx,.xls" style="display:none"
-        onchange="${k==='rp'?'hFRP':'hFAP'}(this)">
+      <input type="file" id="${k}-fi" accept=".xlsx,.xls" style="display:none" onchange="${k==='rp'?'hFRP':'hFAP'}(this)">
     </div>
   </div>`;
 }
 
-const escH=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function toggleEl(id){const e=document.getElementById(id);e.style.display=e.style.display==='none'?'block':'none';}
-function cpTxt(id){navigator.clipboard?.writeText(document.getElementById(id)?.textContent||'').then(()=>alert('Copy แล้วครับ!'));}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // CONFIG PAGE
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function renderCfg(){
   const con=document.getElementById('cfg-body');if(!con)return;
   const su=localStorage.getItem('gs_url')||'';
-  const pin=localStorage.getItem('dash_pin')||DEFAULT_PIN;
   con.innerHTML=`
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-h"><div><div class="card-t">🔗 Google Sheets URL</div><div class="card-s">URL เดียวสำหรับ Replan, Addpaper และ Config (Target)</div></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h"><div class="card-icon">🔗</div><div class="card-t">Google Sheets URL</div></div>
     <div class="card-b">
       <div class="gs-row">
-        <input class="gs-in" id="cfg-gsu" value="${escH(su)}" placeholder="https://script.google.com/macros/s/…/exec"
-          oninput="localStorage.setItem('gs_url',this.value)">
+        <input class="gs-in" id="cfg-gsu" value="${escH(su)}" placeholder="https://script.google.com/macros/s/…/exec" oninput="localStorage.setItem('gs_url',this.value)">
       </div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
-        <button class="btn btn-blue btn-sm" onclick="loadGS('rp')">↺ Refresh Replan</button>
-        <button class="btn btn-blue btn-sm" style="background:#7C3AED" onclick="loadGS('ap')">↺ Refresh Add Paper</button>
-        <button class="btn btn-outline btn-sm" onclick="loadGS('rp');setTimeout(()=>loadGS('ap'),400)">↺ ทั้งคู่</button>
-        <button class="btn btn-outline btn-sm" onclick="reloadTL()">↺ Reload Target Lines</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-blue" style="font-size:11px" onclick="loadGS('rp')">↺ Refresh Replan</button>
+        <button class="btn btn-blue" style="font-size:11px;background:var(--purple)" onclick="loadGS('ap')">↺ Refresh AP</button>
+        <button class="btn btn-ghost" style="font-size:10px" onclick="loadGS('rp');setTimeout(()=>loadGS('ap'),300)">↺ ทั้งคู่</button>
+        <button class="btn btn-ghost" style="font-size:10px" onclick="loadTLfromGS(localStorage.getItem('gs_url'))">↺ Reload Target Lines</button>
       </div>
-      <div style="font-size:10px;color:var(--ink3)">
-        <span id="cfg-rp-st"></span>&nbsp;&nbsp;<span id="cfg-ap-st"></span>
-      </div>
+      <div style="font-size:10px;margin-top:6px;display:flex;gap:12px"><span id="cfg-rp-st"></span><span id="cfg-ap-st"></span></div>
     </div>
   </div>
-
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-h"><div><div class="card-t">🔑 PIN</div><div class="card-s">PIN 4 หลัก สำหรับ unlock หน้าตั้งค่า (เริ่มต้น: ${DEFAULT_PIN})</div></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h"><div class="card-icon">🔑</div><div class="card-t">PIN</div><div class="card-badge">4 หลัก — เริ่มต้น: ${DEFAULT_PIN}</div></div>
     <div class="card-b" style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
       <div>
-        <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:4px">PIN ใหม่</div>
-        <input type="password" id="cfg-pin" maxlength="4" placeholder="••••"
-          style="padding:7px 11px;border:1px solid var(--line);border-radius:var(--r);font-size:15px;font-family:'IBM Plex Mono',monospace;width:100px;outline:none;letter-spacing:4px">
+        <div style="font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;margin-bottom:4px">PIN ใหม่</div>
+        <input type="password" id="cfg-pin" maxlength="4" placeholder="••••" style="padding:6px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:15px;font-family:'IBM Plex Mono',monospace;width:90px;outline:none;letter-spacing:4px">
       </div>
-      <button class="btn btn-blue btn-sm" onclick="savePin()">บันทึก</button>
-      <span id="cfg-pin-msg" style="font-size:10px"></span>
+      <button class="btn btn-blue" style="font-size:11px" onclick="savePin()">บันทึก</button>
+      <span id="cfg-pm" style="font-size:10px"></span>
     </div>
   </div>
-
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-h"><div><div class="card-t">📋 Config Sheet — วิธีตั้ง Target Lines</div></div></div>
+  <div class="card">
+    <div class="card-h"><div class="card-icon">📋</div><div class="card-t">Config Sheet — Target Lines</div></div>
     <div class="card-b">
-      <div class="hint">
-        สร้าง Sheet ชื่อ <code>Config</code> ใน Google Sheets เดียวกัน แล้วใส่ข้อมูลตามนี้:<br><br>
-        <strong>Columns:</strong> <code>tab</code> | <code>name</code> | <code>val</code> | <code>color</code> | <code>dash</code> | <code>curve</code> | <code>show</code><br><br>
-        <strong>tab:</strong> <code>rp</code> = Replan, <code>ap</code> = Add Paper<br>
-        <strong>dash:</strong> <code>solid</code> / <code>dashed</code> / <code>dotted</code><br>
-        <strong>curve:</strong> <code>step</code> / <code>straight</code> / <code>smooth</code><br>
-        <strong>show:</strong> <code>true</code> / <code>false</code><br><br>
-        <strong>ตัวอย่าง:</strong><br>
-        rp | Target | 500000 | #2563EB | dashed | step | true<br>
-        rp | Warning | 700000 | #DC2626 | dotted | step | true<br>
-        ap | Target | 400000 | #7C3AED | dashed | step | true
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="reloadTL()">↺ โหลด Target Lines ใหม่</button>
-      <span id="cfg-tl-msg" style="font-size:10px;margin-left:8px"></span>
+      <div class="hint">Sheet <code>Config</code> ใน Google Sheets<br>
+      Columns: <code>tab</code> | <code>name</code> | <code>val</code> | <code>color</code> | <code>dash</code> | <code>curve</code> | <code>show</code><br>
+      tab: <code>rp</code>=Replan, <code>ap</code>=AddPaper | dash: <code>solid</code>/<code>dashed</code>/<code>dotted</code><br>
+      curve: <code>step</code>/<code>straight</code>/<code>smooth</code> | show: <code>true</code>/<code>false</code></div>
     </div>
   </div>`;
 }
 
 function savePin(){
   const v=(document.getElementById('cfg-pin').value||'').trim();
-  const m=document.getElementById('cfg-pin-msg');
+  const m=document.getElementById('cfg-pm');
   if(!/^\d{4}$/.test(v)){m.style.color='var(--red)';m.textContent='ต้องเป็นตัวเลข 4 หลัก';return;}
   localStorage.setItem('dash_pin',v);m.style.color='var(--green)';m.textContent='บันทึกแล้ว';
   document.getElementById('cfg-pin').value='';setTimeout(()=>{m.textContent='';},2000);
 }
-async function reloadTL(){
-  await loadTargetLines();
-  const m=document.getElementById('cfg-tl-msg');if(m){m.style.color='var(--green)';m.textContent='โหลดแล้ว';}
-  if(RP.fil.length)renderRPAll();if(AP.fil.length)renderAPAll();
+
+// ══════════════════════════════════════
+// TARGET LINES
+// ══════════════════════════════════════
+function saveTL(k){localStorage.setItem(`tl_${k}`,JSON.stringify(TL[k]));}
+async function loadTLfromGS(url){
+  if(!url)return;
+  try{
+    const res=await fetch(`${url}?sheet=Config`);
+    const d=await res.json();
+    if(d.data&&d.data.length>1){
+      const hdrs=d.data[0];
+      const g=(r,h)=>r[hdrs.findIndex(x=>String(x).toLowerCase()===h.toLowerCase())]??'';
+      const rp=[],ap=[];
+      d.data.slice(1).forEach(r=>{
+        const tab=String(g(r,'tab')).toLowerCase();
+        const ln={id:Date.now()+Math.random(),name:String(g(r,'name')||'Target'),val:parseFloat(g(r,'val'))||0,color:String(g(r,'color')||'#DC2626'),dash:String(g(r,'dash')||'solid'),curve:String(g(r,'curve')||'step'),show:String(g(r,'show')).toLowerCase()!=='false'};
+        if(tab==='rp'||tab==='replan')rp.push(ln);
+        if(tab==='ap'||tab==='addpaper')ap.push(ln);
+      });
+      if(rp.length){TL.rp=rp;saveTL('rp');}
+      if(ap.length){TL.ap=ap;saveTL('ap');}
+    }
+  }catch{}
+  if(RP.fil.length)renderRPAll();
+  if(AP.fil.length)renderAPAll();
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // DRAG & DROP / FILE
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function dzO(e,id){e.preventDefault();document.getElementById(id)?.classList.add('dz');}
 function dzL(id){document.getElementById(id)?.classList.remove('dz');}
 function dzD(e,k){e.preventDefault();dzL(k+'-dz');const f=e.dataTransfer.files[0];if(f)k==='rp'?doXlsxRP(f):doXlsxAP(f);}
@@ -609,24 +546,28 @@ function hFRP(i){if(i.files[0])doXlsxRP(i.files[0]);}
 function hFAP(i){if(i.files[0])doXlsxAP(i.files[0]);}
 
 function doXlsxRP(file){
-  const r=new FileReader();
-  r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});const sn=wb.SheetNames.find(n=>n.toLowerCase()==='replan')||wb.SheetNames[0];const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});RP.all=rows.map(rpRow).filter(r=>r.val>0||r.jo);RP.src={type:'xlsx',name:file.name};localStorage.setItem('rp_src','xlsx');RP.ts=new Date();initRP();}catch(err){alert('Error: '+err.message);}};
-  r.readAsArrayBuffer(file);
+  const r=new FileReader();r.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    const sn=wb.SheetNames.find(n=>n.toLowerCase()==='replan')||wb.SheetNames[0];
+    RP.all=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''}).map(rpRow).filter(r=>r.val>0||r.jo);
+    RP.src={type:'xlsx',name:file.name};RP.ts=new Date();localStorage.setItem('rp_src','xlsx');initRP();
+  }catch(err){alert('Error: '+err.message);}};r.readAsArrayBuffer(file);
 }
 function doXlsxAP(file){
-  const r=new FileReader();
-  r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});const sn=wb.SheetNames.find(n=>n.toLowerCase()==='addpaper')||wb.SheetNames[0];const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});AP.all=rows.map(apRow).filter(r=>r.val>0||r.jo);AP.src={type:'xlsx',name:file.name};localStorage.setItem('ap_src','xlsx');AP.ts=new Date();initAP();}catch(err){alert('Error: '+err.message);}};
-  r.readAsArrayBuffer(file);
+  const r=new FileReader();r.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    const sn=wb.SheetNames.find(n=>n.toLowerCase()==='addpaper')||wb.SheetNames[0];
+    AP.all=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''}).map(apRow).filter(r=>r.val>0||r.jo);
+    AP.src={type:'xlsx',name:file.name};AP.ts=new Date();localStorage.setItem('ap_src','xlsx');initAP();
+  }catch(err){alert('Error: '+err.message);}};r.readAsArrayBuffer(file);
 }
 
-// ─ parsers ─
+// ── Parsers ──
 function parseCause(raw){
   if(!raw)return{machine:'OTHER',problem:'OTHER'};
   const c=String(raw).split('\n')[0].trim();
-  let m=c.match(/^([^-+]+?)-(.+?)\+\d+/);
-  if(m)return{machine:cmc(m[1]),problem:cpc(m[2])};
-  m=c.match(/^([^+]+)\+\d+/);
-  if(m)return{machine:cmc(m[1]),problem:'UNKNOWN'};
+  let m=c.match(/^([^-+]+?)-(.+?)\+\d+/);if(m)return{machine:cmc(m[1]),problem:cpc(m[2])};
+  m=c.match(/^([^+]+)\+\d+/);if(m)return{machine:cmc(m[1]),problem:'UNKNOWN'};
   return{machine:cmc(c),problem:'OTHER'};
 }
 const cmc=s=>String(s||'').replace(/[-_+].*$/,'').trim().toUpperCase()||'OTHER';
@@ -635,31 +576,33 @@ function getDP(d){
   if(!d)return{yr:0,mo:0};
   if(d instanceof Date&&!isNaN(d))return{yr:d.getFullYear(),mo:d.getMonth()+1};
   if(typeof d==='number'&&d>40000){const dd=new Date(Math.round((d-25569)*86400*1000));return{yr:dd.getFullYear(),mo:dd.getMonth()+1};}
-  const s2=String(d),sep=s2.includes('/')?'/':(s2.includes('-')?'-':null);
-  if(sep){const ps=s2.split(sep);if(ps.length>=2){const a=parseInt(ps[0]),b=parseInt(ps[1]),c=parseInt(ps[2]||0);if(a>2000)return{yr:a,mo:b};if(c>2000)return{yr:c,mo:b};if(c>0)return{yr:2000+c,mo:b};}}
+  const s2=String(d).trim();
+  // Try yyyy-mm-dd or dd/mm/yyyy or mm/dd/yyyy
+  let m=s2.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);if(m)return{yr:parseInt(m[1]),mo:parseInt(m[2])};
+  m=s2.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})/);if(m)return{yr:parseInt(m[3]),mo:parseInt(m[1])};
+  m=s2.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{2})$/);if(m)return{yr:2000+parseInt(m[3]),mo:parseInt(m[1])};
   const nd=new Date(d);return isNaN(nd)?{yr:0,mo:0}:{yr:nd.getFullYear(),mo:nd.getMonth()+1};
 }
 const nv=v=>parseFloat(String(v||'').replace(/,/g,''))||0;
 const sv=v=>String(v||'').trim();
 const kk=(r,k)=>Object.keys(r).find(x=>x.toLowerCase().trim()===k)||Object.keys(r).find(x=>x.toLowerCase().includes(k));
-
 function rpRow(r){
   const{yr,mo}=getDP(r[kk(r,'date')]||'');
   const{machine,problem}=parseCause(r[kk(r,'cause')]||'');
-  const{dept,proc,fac}=mcLookup(machine);
+  const{dept,proc,fac}=mcL(machine);
   return{jo:sv(r['JO']||r[kk(r,'jo')]||''),compnt:sv(r[kk(r,'compnt')]||r[kk(r,'component')]||r[kk(r,'code')]||''),machine,problem,dept,proc,fac,val:nv(r[kk(r,'val')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
 }
 function apRow(r){
   const{yr,mo}=getDP(r[kk(r,'date')]||'');
   const dept=sv(r[kk(r,'dept')]||'');
   const mc=sv(r['MC']||r[kk(r,'mc')]||'');
-  const lkp=mcLookup(mc)||{};
+  const lkp=mcL(mc);
   return{jo:sv(r['JO']||r[kk(r,'jo')]||''),code:sv(r[kk(r,'code')]||''),sh:nv(r[kk(r,'sh')]||0),cause:sv(r[kk(r,'cause')]||'').replace(/\s+/g,' '),dept:dept||lkp.dept||'OTHER',facc:sv(r[kk(r,'facc')]||''),mc,val:nv(r[kk(r,'val')]||0),check:parseInt(r[kk(r,'check')]||1)||1,yr,mo};
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // GOOGLE SHEETS LOADER
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 async function loadGS(k){
   const url=(document.getElementById(`${k}-gsu`)?.value||document.getElementById('cfg-gsu')?.value||localStorage.getItem('gs_url')||'').trim();
   if(!url){alert('กรุณาใส่ URL ครับ');return;}
@@ -685,69 +628,73 @@ async function loadGS(k){
     sp(100,'สำเร็จ');
     if(k==='rp'){RP.all=all.map(rpRow).filter(r=>r.val>0||r.jo);RP.src={type:'gs',sheet:sn,url};RP.ts=new Date();localStorage.setItem('rp_src','gs');initRP();}
     else{AP.all=all.map(apRow).filter(r=>r.val>0||r.jo);AP.src={type:'gs',sheet:sn,url};AP.ts=new Date();localStorage.setItem('ap_src','gs');initAP();}
-    if(stEl){stEl.className='gs-st ok';stEl.textContent=`โหลดแล้ว ${all.length.toLocaleString()} แถว (${sn})`;}
+    if(stEl){stEl.className='gs-st ok';stEl.textContent=`โหลดแล้ว ${all.length.toLocaleString()} แถว`;}
     if(cfgSt){cfgSt.style.color='var(--green)';cfgSt.textContent=`${k==='rp'?'RP':'AP'}: ${all.length.toLocaleString()} แถว`;}
-    setTimeout(()=>{if(pEl)pEl.style.display='none';},1200);
+    setTimeout(()=>{if(pEl)pEl.style.display='none';},1000);
   }catch(err){
     if(pEl)pEl.style.display='none';
-    if(stEl){stEl.className='gs-st err';stEl.textContent='โหลดไม่สำเร็จ: '+err.message;}
-    if(cfgSt){cfgSt.style.color='var(--red)';cfgSt.textContent='Error: '+err.message;}
-    alert(`โหลดไม่สำเร็จ: ${err.message}\n\nตรวจสอบ:\n• Apps Script Deploy เป็น Anyone\n• Sheet ชื่อ "${sn}" ถูกต้อง`);
+    if(stEl){stEl.className='gs-st err';stEl.textContent='Error: '+err.message;}
+    if(cfgSt){cfgSt.style.color='var(--red)';cfgSt.textContent='Error';}
+    alert(`โหลดไม่สำเร็จ: ${err.message}\n\n• Deploy เป็น Anyone?\n• Sheet "${sn}" ชื่อถูกต้อง?`);
   }
 }
 async function autoGS(k,url){const el=document.getElementById(`${k}-gsu`);if(el)el.value=url;await loadGS(k);}
-function refreshRP(){if(RP.src?.type==='gs')loadGS('rp');else alert('ลากไฟล์ Excel ใหม่เพื่ออัปเดตครับ');}
-function refreshAP(){if(AP.src?.type==='gs')loadGS('ap');else alert('ลากไฟล์ Excel ใหม่เพื่ออัปเดตครับ');}
+function refreshRP(){if(RP.src?.type==='gs')loadGS('rp');else alert('ลากไฟล์ Excel ใหม่ครับ');}
+function refreshAP(){if(AP.src?.type==='gs')loadGS('ap');else alert('ลากไฟล์ Excel ใหม่ครับ');}
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // REPLAN INIT & FILTER
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function initRP(){
   document.getElementById('rp-nodata').style.display='none';
   document.getElementById('rp-setup').style.display='none';
   document.getElementById('rp-live').style.display='';
-  const src=document.getElementById('rp-src');
-  src.innerHTML=RP.src?.type==='gs'?`<span style="color:var(--green);font-size:10px">GS: ${RP.src.sheet}</span>`:`<span style="color:var(--blue);font-size:10px">${RP.src?.name||'Excel'}</span>`;
-  const ts=document.getElementById('rp-ts');if(ts&&RP.ts)ts.textContent=RP.ts.toLocaleTimeString('th-TH');
-  buildSelRP();rpF();updStatus();
-}
-function fSel(id,vals,all,fmt2){
-  const el=document.getElementById(id);if(!el)return;const cur=el.value;
-  el.innerHTML=`<option value="">— ${all} —</option>`+vals.map(v=>`<option value="${v}">${fmt2?fmt2(v):v}</option>`).join('');
-  if([...el.options].some(o=>o.value===String(cur)))el.value=String(cur);
-}
-function buildSelRP(){
-  fSel('rp-fy',[...new Set(RP.all.map(r=>r.yr).filter(Boolean))].sort(),'ทุกปี');
-  fSel('rp-fm',[...new Set(RP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b),'ทุกเดือน',m=>MN[m]);
-  fSel('rp-fmc',[...new Set(RP.all.map(r=>r.machine).filter(m=>m&&m!=='OTHER'))].sort(),'ทุกเครื่อง');
-  fSel('rp-fpb',[...new Set(RP.all.map(r=>r.problem).filter(p=>p&&!['OTHER','UNKNOWN'].includes(p)))].sort(),'ทุกปัญหา');
-  fSel('rp-fd',[...new Set(RP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort(),'ทุกแผนก');
-  fSel('rp-ff',[...new Set(RP.all.map(r=>r.fac).filter(f=>f&&f!=='OTHER'))].sort(),'ทุกโรงงาน');
-}
-function rpF(){
-  const y=document.getElementById('rp-fy').value,m=document.getElementById('rp-fm').value;
-  const mc=document.getElementById('rp-fmc').value,pb=document.getElementById('rp-fpb').value;
-  const fd=document.getElementById('rp-fd').value,ff=document.getElementById('rp-ff').value;
-  RP.fil=RP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(mc&&r.machine!==mc)return false;if(pb&&r.problem!==pb)return false;if(fd&&r.dept!==fd)return false;if(ff&&r.fac!==ff)return false;return true;});
-  RP.pg=0;RP.q='';const si=document.getElementById('rp-si2');if(si)si.value='';
-  rpChips();renderRPAll();
-}
-function rpRst(){['rp-fy','rp-fm','rp-fmc','rp-fpb','rp-fd','rp-ff'].forEach(id=>document.getElementById(id).value='');rpF();}
-function rpChips(){
-  const vals={y:document.getElementById('rp-fy').value,m:document.getElementById('rp-fm').value,mc:document.getElementById('rp-fmc').value,pb:document.getElementById('rp-fpb').value,fd:document.getElementById('rp-fd').value,ff:document.getElementById('rp-ff').value};
-  const chips=[];
-  if(vals.y)chips.push([`ปี ${vals.y}`,"document.getElementById('rp-fy').value='';rpF()"]);
-  if(vals.m)chips.push([MN[parseInt(vals.m)],"document.getElementById('rp-fm').value='';rpF()"]);
-  if(vals.mc)chips.push([vals.mc,"document.getElementById('rp-fmc').value='';rpF()"]);
-  if(vals.pb)chips.push([vals.pb,"document.getElementById('rp-fpb').value='';rpF()"]);
-  if(vals.fd)chips.push([vals.fd,"document.getElementById('rp-fd').value='';rpF()"]);
-  if(vals.ff)chips.push([vals.ff,"document.getElementById('rp-ff').value='';rpF()"]);
-  document.getElementById('rp-chips').innerHTML=chips.map(([l,fn])=>`<span class="chip">${l}<span class="chip-x" onclick="${fn}">×</span></span>`).join('');
+  updStatus();buildSelRP();rpF();
 }
 
-// ═══════════════════════════════════════
+function fSel(id,vals,allLabel,fmt2){
+  const el=document.getElementById(id);if(!el)return;
+  const cur=el.value;
+  el.innerHTML=`<option value="">— ${allLabel} —</option>`+vals.map(v=>`<option value="${v}">${fmt2?fmt2(v):v}</option>`).join('');
+  if([...el.options].some(o=>o.value===String(cur)))el.value=String(cur);
+}
+
+function buildSelRP(){
+  const yrs=[...new Set(RP.all.map(r=>r.yr).filter(Boolean))].sort();
+  const mos=[...new Set(RP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b);
+  const depts=[...new Set(RP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort();
+  const mcs=[...new Set(RP.all.map(r=>r.machine).filter(m=>m&&m!=='OTHER'))].sort();
+  const pbs=[...new Set(RP.all.map(r=>r.problem).filter(p=>p&&!['OTHER','UNKNOWN'].includes(p)))].sort();
+  fSel('rp-fy',yrs,'All Years');
+  // FIX: store mo as number, display as name
+  fSel('rp-fm',mos,'All Months',m=>MN_EN[m]);
+  fSel('rp-fd',depts,'All Depts');
+  fSel('rp-fmc',mcs.slice(0,50),'All Machines');
+  fSel('rp-fpb',pbs.slice(0,50),'All Problems');
+}
+
+function rpF(){
+  const y=document.getElementById('rp-fy').value;
+  const m=document.getElementById('rp-fm').value; // this is now the numeric month string
+  const fd=document.getElementById('rp-fd').value;
+  const mc=document.getElementById('rp-fmc').value;
+  const pb=document.getElementById('rp-fpb').value;
+  RP.fil=RP.all.filter(r=>{
+    if(y&&String(r.yr)!==y)return false;
+    if(m&&String(r.mo)!==m)return false; // compare as strings, both numeric
+    if(fd&&r.dept!==fd)return false;
+    if(mc&&r.machine!==mc)return false;
+    if(pb&&r.problem!==pb)return false;
+    return true;
+  });
+  RP.pg=0;RP.q='';RP.chartSel={};
+  renderRPAll();
+}
+function rpRst(){['rp-fy','rp-fm','rp-fd','rp-fmc','rp-fpb'].forEach(id=>document.getElementById(id).value='');rpF();}
+
+// ══════════════════════════════════════
 // REPLAN RENDER
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function renderRPAll(){
   const con=document.getElementById('rp-content');
   const d=RP.fil;
@@ -761,160 +708,417 @@ function renderRPAll(){
   const h5k=d.filter(r=>r.val>=5000);
   const mos=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
   const avg=mos.length?tv/mos.length:tv;
+  const tAll=tlines.reduce((a,l)=>a+l.val,0);
   const pct=firstTgt?avg/firstTgt*100:null;
   const topPG={};d.forEach(r=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))topPG[r.problem]=(topPG[r.problem]||0)+r.val;});
   const topP=Object.entries(topPG).sort((a,b)=>b[1]-a[1])[0];
 
-  // KPIs
-  const kDiv=mkEl('div','kpi-row');
-  const KCOLORS=['#2563EB','#EA580C','#7C3AED','#16A34A','#DC2626','#991B1B'];
-  kDiv.innerHTML=[
-    {l:'Total Value (THB)',v:fB(tv)+' THB',s:`Target: ${firstTgt?fB(firstTgt)+' THB':'—'}`,badge:pct!==null?(pct<=100?`✓ ${(100-pct).toFixed(1)}% ต่ำกว่าเป้า`:`⚠ ${(pct-100).toFixed(1)}% เกินเป้า`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
-    {l:'Target All (THB)',v:fB(firstTgt)+' THB',s:'เป้าหมายรวม'},
-    {l:'Baseline Avg (THB)',v:fB(avg)+' THB',s:'ค่าเฉลี่ย Baseline'},
-    {l:'Total Jobs',v:f(d.length),s:'จำนวนรายการทั้งหมด'},
-    {l:'Jobs > 5,000 THB',v:f(h5k.length),s:`มูลค่ารวม: ${fB(h5k.reduce((a,r)=>a+r.val,0))} THB`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
-    {l:'รายการใหม่ (Check=0)',v:f(ni.length),s:`มูลค่ารวม: ${fB(ni.reduce((a,r)=>a+r.val,0))} THB`,badge:ni.length?'รอนำเข้าประชุม':'ครบ',bc:ni.length?'ng':'ok'},
-  ].map((k,i)=>`<div class="kpi" style="--kc:${KCOLORS[i]}"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
+  // ── Section 1: KPIs ──
+  secHdr(con,'1','ภาพรวมมูลค่า LOSS');
+  const kDiv=document.createElement('div');kDiv.className='kpi-row';
+  kDiv.innerHTML=`
+    <div class="kpi kpi-blue">
+      <div class="kpi-l">Total Value (THB)</div>
+      <div class="kpi-v">${fB(tv)}</div>
+      <div class="kpi-s">Target: ${fB(firstTgt)} THB</div>
+      ${pct!==null?`<span class="kpi-b ${pct<=100?'b-ok':'b-ng'}">${pct>100?'▲':''} ${Math.abs(100-pct).toFixed(1)}% ${pct>100?'เกินเป้า':'ต่ำกว่าเป้า'}</span>`:''}
+    </div>
+    <div class="kpi kpi-amber">
+      <div class="kpi-l">Target All (THB)</div>
+      <div class="kpi-v">${fB(tAll||firstTgt)}</div>
+      <div class="kpi-s">เป้าหมายรวม</div>
+    </div>
+    <div class="kpi kpi-purple">
+      <div class="kpi-l">Baseline Avg (THB)</div>
+      <div class="kpi-v">${fB(avg)}</div>
+      <div class="kpi-s">ค่าเฉลี่ย Baseline</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-l">Total Jobs</div>
+      <div class="kpi-v">${f(d.length)}</div>
+      <div class="kpi-s">จำนวนรายการทั้งหมด</div>
+    </div>
+    <div class="kpi kpi-red">
+      <div class="kpi-l">Jobs &gt; 5,000 THB</div>
+      <div class="kpi-v">${f(h5k.length)}</div>
+      <div class="kpi-s">มูลค่ารวม: ${fB(h5k.reduce((a,r)=>a+r.val,0))} THB</div>
+    </div>
+    <div class="kpi kpi-orange">
+      <div class="kpi-l">รายการใหม่ (Check=0)</div>
+      <div class="kpi-v">${f(ni.length)}</div>
+      <div class="kpi-s">มูลค่ารวม: ${fB(ni.reduce((a,r)=>a+r.val,0))} THB</div>
+    </div>`;
   con.appendChild(kDiv);
 
-  // Target Accordion
-  con.appendChild(buildTLAccordion('rp'));
+  // ── Target Accordion ──
+  con.appendChild(buildTLAcc('rp'));
 
-  // Charts row 1: Monthly + Machine
-  sh(con,'Monthly Value & Machine');
-  const r1=mkEl('div','g2');con.appendChild(r1);
-  r1.appendChild(mkCd('📅 Monthly Value (฿)','','<div style="height:240px"><canvas id="rpMo"></canvas></div>'));
-  r1.appendChild(mkCd('🔧 Top Machines','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpMC"></canvas></div>'));
-
-  // Charts row 2: Dept + Factory
-  sh(con,'รายแผนก / โรงงาน');
+  // ── Section 2: Monthly + Dept ──
+  secHdr(con,'2','แนวโน้มรายเดือน & แผนก');
   const r2=mkEl('div','g2');con.appendChild(r2);
-  r2.appendChild(mkCd('🏢 มูลค่าตาม Department','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpDept"></canvas></div>'));
-  r2.appendChild(mkCd('🏭 มูลค่าตาม Factory','<span style="font-size:9px;color:var(--blue);opacity:.7">คลิกแท่งเพื่อ filter</span>','<div style="height:240px;cursor:pointer"><canvas id="rpFac"></canvas></div>'));
+  r2.appendChild(mkCard2('📅','Monthly Value (THB)',null,'<div style="height:250px"><canvas id="rpMo"></canvas></div><div class="chart-filter-hint">คลิกที่แท่งเพื่อ filter</div>'));
+  r2.appendChild(mkCard2('🏢','Department Value',null,'<div style="height:250px"><canvas id="rpDept"></canvas></div><div class="chart-filter-hint">คลิกที่แท่งเพื่อ filter</div>'));
 
-  // Pareto
-  sh(con,'Pareto Analysis');
-  const r3=mkEl('div','g2');con.appendChild(r3);
-  r3.appendChild(mkCd('⚠ Pareto — Problem','Top 10 ตามมูลค่า','<div id="rp-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP1"></canvas></div>'));
-  r3.appendChild(mkCd('🔧 Pareto — Machine','Top 10 ตามมูลค่า','<div id="rp-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP2"></canvas></div>'));
+  // ── Section 3: KPI vs Target (simple bar) ──
+  secHdr(con,'3','ประเมินผล VS เป้าหมาย');
+  const kpiTgt=mkCard2('🎯','KPI vs Target',null,`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">Actual vs Target</div>
+        <div style="font-size:36px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${pct!==null&&pct>100?'var(--red)':'var(--green)'}">${fB(tv)}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Target: ${fB(firstTgt)} THB</div>
+        ${pct!==null?`<div style="margin-top:6px"><span class="kpi-b ${pct>100?'b-ng':'b-ok'}" style="font-size:11px">${pct>100?'▲ เกินเป้าหมาย':'✓ ต่ำกว่าเป้าหมาย'}</span></div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding:12px 0">
+        <div style="background:var(--line2);border-radius:var(--r);padding:10px 12px">
+          <div style="font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Dept Target</div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+        <div style="background:var(--line2);border-radius:var(--r);padding:10px 12px">
+          <div style="font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Jobs > 5,000</div>
+          <div style="font-size:14px;font-weight:700;color:var(--red)">${f(h5k.length)} jobs</div>
+        </div>
+        <div style="background:var(--line2);border-radius:var(--r);padding:10px 12px">
+          <div style="font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Value Jobs > 5K</div>
+          <div style="font-size:14px;font-weight:700;color:var(--blue)">${fB(h5k.reduce((a,r)=>a+r.val,0))} THB</div>
+        </div>
+        <div style="background:var(--line2);border-radius:var(--r);padding:10px 12px">
+          <div style="font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">รายการใหม่</div>
+          <div style="font-size:14px;font-weight:700;color:var(--amber)">${f(ni.length)} items</div>
+        </div>
+      </div>
+    </div>`);
+  con.appendChild(kpiTgt);
 
-  // Product
-  sh(con,'Product Ranking');
-  const prC=mkCdB('📦 Top 15 Products','','rp-pb','<div style="height:300px"><canvas id="rpProd"></canvas></div>');con.appendChild(prC);
+  // ── Section 4: Pareto ──
+  secHdr(con,'4','วิเคราะห์สาเหตุ (WHY?)');
+  const r4=mkEl('div','g2');con.appendChild(r4);
+  r4.appendChild(mkCard2('📊','Pareto — สาเหตุ vs จำนวนครั้ง','Top 10 Causes by Count',`<div id="rp-ins1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP1"></canvas></div><div class="chart-filter-hint">คลิกที่แท่งเพื่อ filter</div>`));
+  r4.appendChild(mkCard2('📊','Pareto — สาเหตุ vs มูลค่า','Top 10 Causes by Value',`<div id="rp-ins2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="rpP2"></canvas></div><div class="chart-filter-hint">คลิกที่แท่งเพื่อ filter</div>`));
 
-  // Table
-  sh(con,'รายละเอียด',`${d.length.toLocaleString()} รายการ`,'rp-tsub');
-  const tC=mkEl('div','card');
-  tC.innerHTML=`
-    <div class="sbar"><input type="text" class="si" id="rp-si2" placeholder="ค้นหา JO, สินค้า, Machine, Problem..." oninput="rpSrch()"><div class="sct" id="rp-sc"></div></div>
-    <div class="tscroll"><table>
+  // ── Section 5: Product Ranking ──
+  secHdr(con,'5','สินค้าที่มีมูลค่า LOSS สูงสุด (WHAT?)');
+  const prod=mkCard2('📦','Top 10 Products by Value',null,'<div style="height:280px"><canvas id="rpProd"></canvas></div><div class="chart-filter-hint">คลิกที่แท่งเพื่อ filter</div>');con.appendChild(prod);
+
+  // ── Section 6: Table ──
+  secHdr(con,'6','รายละเอียดทั้งหมด');
+  const tCard=mkEl('div','card');
+  tCard.innerHTML=`
+    <div class="card-h"><div class="card-icon">📋</div><div class="card-t">รายละเอียดทั้งหมด</div><div class="card-badge" id="rp-tsub">${d.length.toLocaleString()} rows</div></div>
+    <div class="sbar"><input type="text" class="si" id="rp-si" placeholder="ค้นหาในตาราง..." oninput="rpSrch()"><div class="sct" id="rp-sc"></div></div>
+    <div class="tbl-scroll"><table>
       <thead><tr>
-        <th onclick="rpSort('jo')">JO</th><th onclick="rpSort('compnt')">สินค้า</th>
-        <th onclick="rpSort('machine')">Machine</th><th onclick="rpSort('problem')">Problem</th>
-        <th onclick="rpSort('dept')">Dept</th><th onclick="rpSort('fac')">Factory</th>
-        <th onclick="rpSort('mo')">เดือน</th><th onclick="rpSort('val')" class="sd">มูลค่า (฿)</th><th>สถานะ</th>
+        <th onclick="rpSort('jo')">JO</th><th onclick="rpSort('compnt')">Component</th>
+        <th onclick="rpSort('machine')">Machine</th><th onclick="rpSort('problem')">Cause</th>
+        <th onclick="rpSort('dept')">Dept</th><th onclick="rpSort('mo')">Month</th>
+        <th onclick="rpSort('val')" class="sd">Value (THB) ↓</th><th>Status</th>
       </tr></thead>
       <tbody id="rp-tb"></tbody>
       <tfoot><tr id="rp-tf"></tr></tfoot>
     </table></div>
     <div class="pgn" id="rp-pg"></div>`;
-  con.appendChild(tC);
+  con.appendChild(tCard);
+
+  // ── Section 6b: New items table ──
+  if(ni.length){
+    const niCard=mkEl('div','card');
+    niCard.innerHTML=`
+      <div class="card-h"><div class="card-icon">🆕</div><div class="card-t">รายการใหม่ (check = 0)</div><div class="card-badge">${ni.length} รายการ</div></div>
+      <div class="tbl-scroll"><table>
+        <thead><tr>
+          <th>JO</th><th>Component</th><th>JO Problem</th><th>Machine</th><th>Cause</th><th>Dept</th><th>Month</th><th>Value (THB) ↓</th><th>Status</th>
+        </tr></thead>
+        <tbody>${ni.sort((a,b)=>b.val-a.val).slice(0,50).map(r=>`<tr>
+          <td class="mono">${r.jo}</td>
+          <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.compnt}</td>
+          <td></td>
+          <td>${r.machine}</td><td>${r.problem}</td><td>${r.dept}</td>
+          <td style="white-space:nowrap">${MN_EN[r.mo]} ${r.yr}</td>
+          <td class="tar mono" style="color:var(--red);font-weight:700">${f(r.val)} ${r.val>=5000?'<span class="tag tag-high">▲ HIGH</span>':''}</td>
+          <td><span class="tag tag-new">NEW</span></td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="7">Total (${ni.length} rows)</td><td class="tar mono">${f(ni.reduce((a,r)=>a+r.val,0))}</td><td></td></tr></tfoot>
+      </table></div>`;
+    con.appendChild(niCard);
+  }
 
   requestAnimationFrame(()=>{buildRPCharts(d,mos);rpTbl();});
 }
 
-function buildRPCharts(d,mos){
-  // Monthly
-  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k]=(mo[k]||0)+r.val;}});
-  const mK=Object.keys(mo).sort(),mV=mK.map(k=>mo[k]);
-  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
-  const tds=buildTDS('rp',mK.length);
-  dc('rpM');
-  CHS['rpM']=new Chart(document.getElementById('rpMo'),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#2563EB';}),borderRadius:4,order:2},...tds]},options:moOpts()});
-
-  // Machine
-  const mcG={};d.forEach(r=>{if(r.machine&&r.machine!=='OTHER')mcG[r.machine]=(mcG[r.machine]||0)+r.val;});
-  const mcS=Object.entries(mcG).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  dc('rpMC');
-  const rpMCPlug = makeClickPlugin('rpMC', lbl => {
-    const el = document.getElementById('rp-fmc'); if(!el) return;
-    el.value = lbl || ''; rpF();
-  });
-  CHS['rpMC']=new Chart(document.getElementById('rpMC'),{type:'bar',data:{labels:mcS.map(x=>x[0]),datasets:[{data:mcS.map(x=>x[1]),backgroundColor:mcS.map(()=>'#2563EB'),_baseColor:'#2563EB',borderRadius:3}]},options:hOpts(rpMCPlug)});
-
-  // Dept chart
-  const dG={};d.forEach(r=>{if(r.dept&&r.dept!=='OTHER')dG[r.dept]=(dG[r.dept]||0)+r.val;});
-  const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
-  dc('rpDept');
-  const rpDeptPlug = makeClickPlugin('rpDept', lbl => {
-    const el = document.getElementById('rp-fd'); if(!el) return;
-    el.value = lbl || ''; rpF();
-  });
-  CHS['rpDept']=new Chart(document.getElementById('rpDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:dS.map(()=>'#3B82F6'),_baseColor:'#3B82F6',borderRadius:3}]},options:hOpts(rpDeptPlug)});
-
-  // Factory chart
-  const fG={};d.forEach(r=>{if(r.fac&&r.fac!=='OTHER')fG[r.fac]=(fG[r.fac]||0)+r.val;});
-  const fS=Object.entries(fG).sort((a,b)=>b[1]-a[1]);
-  dc('rpFac');
-  const rpFacPlug = makeClickPlugin('rpFac', lbl => {
-    const el = document.getElementById('rp-ff'); if(!el) return;
-    el.value = lbl || ''; rpF();
-  });
-  CHS['rpFac']=new Chart(document.getElementById('rpFac'),{type:'bar',data:{labels:fS.map(x=>x[0]),datasets:[{data:fS.map(x=>x[1]),backgroundColor:fS.map(()=>'#60A5FA'),_baseColor:'#60A5FA',borderRadius:3}]},options:hOpts(rpFacPlug)});
-
-  // Pareto
-  buildPareto('rpP1','rp-pi1',Object.fromEntries(Object.entries(d.reduce((a,r)=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))a[r.problem]=(a[r.problem]||0)+r.val;return a;},{}))));
-  buildPareto('rpP2','rp-pi2',mcG);
-
-  // Product
-  const pG={};d.forEach(r=>{if(r.compnt)pG[r.compnt]=(pG[r.compnt]||0)+r.val;});
-  const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const pb=document.getElementById('rp-pb');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('rpProd');
-  const rpProdPlug = makeClickPlugin('rpProd', lbl => {
-    const si = document.getElementById('rp-si2'); if(!si) return;
-    if(lbl){ si.value = lbl.replace('…',''); } else { si.value=''; }
-    rpSrch();
-  });
-  CHS['rpProd']=new Chart(document.getElementById('rpProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map(()=>'#1D4ED8'),_baseColor:'#1D4ED8',borderRadius:3}]},options:{...hOpts(rpProdPlug),layout:{padding:{right:60}}}});
+// ══════════════════════════════════════
+// CHART CLICK FILTER (highlight/fade)
+// ══════════════════════════════════════
+function makeClickFilter(chartId, labelKey, filterFn){
+  // Returns onClick handler that sets chartSel and re-renders
+  return function(evt, els){
+    if(!els||!els.length)return;
+    const idx=els[0].index;
+    const chart=CHS[chartId];
+    if(!chart)return;
+    const label=chart.data.labels[idx];
+    // Toggle selection
+    if(RP.chartSel[labelKey]===label){
+      delete RP.chartSel[labelKey];
+    } else {
+      RP.chartSel[labelKey]=label;
+    }
+    filterFn();
+    highlightChart(chartId,labelKey);
+  };
 }
 
-// ═══════════════════════════════════════
+function highlightChart(chartId,labelKey){
+  const chart=CHS[chartId];if(!chart)return;
+  const sel=RP.chartSel[labelKey];
+  const labels=chart.data.labels;
+  chart.data.datasets.forEach(ds=>{
+    if(ds.type==='line')return;
+    if(!sel){
+      ds.backgroundColor=ds._origColors||ds.backgroundColor;
+    } else {
+      if(!ds._origColors)ds._origColors=[...ds.backgroundColor];
+      ds.backgroundColor=labels.map((l,i)=>l===sel?ds._origColors[i]||ds._origColors:fadeColor(ds._origColors[i]||ds._origColors));
+    }
+  });
+  chart.update('none');
+}
+function fadeColor(c){
+  // Parse hex/rgb and return faded version
+  if(typeof c==='string'&&c.startsWith('#')){
+    return c+'40'; // add alpha
+  }
+  if(typeof c==='string'&&c.includes('rgba')){
+    return c.replace(/[\d.]+\)$/,'0.25)');
+  }
+  return typeof c==='string'?c+'40':c;
+}
+
+function applyChartFilters(){
+  // Apply RP.chartSel to RP.fil and re-render
+  const base=RP.all.filter(r=>{
+    const y=document.getElementById('rp-fy').value,m=document.getElementById('rp-fm').value;
+    const fd=document.getElementById('rp-fd').value,mc=document.getElementById('rp-fmc').value,pb=document.getElementById('rp-fpb').value;
+    if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;
+    if(fd&&r.dept!==fd)return false;if(mc&&r.machine!==mc)return false;if(pb&&r.problem!==pb)return false;
+    return true;
+  });
+  RP.fil=base.filter(r=>{
+    if(RP.chartSel.dept&&r.dept!==RP.chartSel.dept)return false;
+    if(RP.chartSel.problem&&r.problem!==RP.chartSel.problem)return false;
+    if(RP.chartSel.machine&&r.machine!==RP.chartSel.machine)return false;
+    if(RP.chartSel.compnt&&r.compnt!==RP.chartSel.compnt)return false;
+    if(RP.chartSel.moKey){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;if(k!==RP.chartSel.moKey)return false;}
+    return true;
+  });
+  RP.pg=0;RP.q='';
+  rpTbl();
+  // Update KPI row quickly
+  const d=RP.fil;
+  const tvEl=document.querySelector('.kpi-blue .kpi-v');if(tvEl)tvEl.textContent=fB(d.reduce((a,r)=>a+r.val,0));
+}
+
+// ══════════════════════════════════════
+// REPLAN CHARTS
+// ══════════════════════════════════════
+function buildRPCharts(d,mos){
+  const BASE_CLR='#3B82F6';
+  const FADE='rgba(59,130,246,0.15)';
+
+  // ── Monthly ──
+  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k]=(mo[k]||0)+r.val;}});
+  const mK=Object.keys(mo).sort(),mV=mK.map(k=>mo[k]);
+  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN_EN[parseInt(m)]}'${y.slice(2)}`;});
+  const tds=buildTDS('rp',mK.length);
+  dc('rpM');
+  CHS['rpM']=new Chart(document.getElementById('rpMo'),{
+    type:'bar',
+    data:{labels:mL,datasets:[{label:'Value (THB)',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#3B82F6';}),borderRadius:3,order:2,_origColors:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#3B82F6';})},...tds]},
+    options:{...moOpts(),onClick:function(evt,els){
+      if(!els||!els.length){RP.chartSel.moKey=undefined;applyChartFilters();return;}
+      const idx=els[0].index;const label=mK[idx];
+      RP.chartSel.moKey=RP.chartSel.moKey===label?undefined:label;
+      applyChartFilters();highlightChart('rpM','moKey');
+    }}});
+
+  // ── Dept ──
+  const dG={};d.forEach(r=>{if(r.dept&&r.dept!=='OTHER')dG[r.dept]=(dG[r.dept]||0)+r.val;});
+  const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
+  const dColors=dS.map(()=>BASE_CLR);
+  dc('rpDept');
+  CHS['rpDept']=new Chart(document.getElementById('rpDept'),{
+    type:'bar',
+    data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:[...dColors],borderRadius:3,_origColors:[...dColors]}]},
+    options:{...hOpts(),onClick:function(evt,els){
+      if(!els||!els.length){RP.chartSel.dept=undefined;applyChartFilters();return;}
+      const label=dS[els[0].index][0];
+      RP.chartSel.dept=RP.chartSel.dept===label?undefined:label;
+      applyChartFilters();highlightChart('rpDept','dept');
+    }}});
+
+  // ── Pareto by count ──
+  const pbC={};d.forEach(r=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))pbC[r.problem]=(pbC[r.problem]||0)+1;});
+  buildParetoChart('rpP1','rp-ins1',pbC,'count',function(label){
+    RP.chartSel.problem=RP.chartSel.problem===label?undefined:label;applyChartFilters();highlightChart('rpP1','problem');
+  });
+
+  // ── Pareto by value ──
+  const pbV={};d.forEach(r=>{if(r.problem&&!['OTHER','UNKNOWN'].includes(r.problem))pbV[r.problem]=(pbV[r.problem]||0)+r.val;});
+  buildParetoChart('rpP2','rp-ins2',pbV,'value',function(label){
+    RP.chartSel.problem=RP.chartSel.problem===label?undefined:label;applyChartFilters();highlightChart('rpP2','problem');
+    highlightChart('rpP1','problem');
+  });
+
+  // ── Product Top 10 ──
+  const pG={};d.forEach(r=>{if(r.compnt)pG[r.compnt]=(pG[r.compnt]||0)+r.val;});
+  const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const pColors=pS.map(()=>BASE_CLR);
+  dc('rpProd');
+  CHS['rpProd']=new Chart(document.getElementById('rpProd'),{
+    type:'bar',
+    data:{labels:pS.map(x=>x[0].length>30?x[0].slice(0,29)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:[...pColors],borderRadius:3,_origColors:[...pColors]}]},
+    options:{...hOpts(),onClick:function(evt,els){
+      if(!els||!els.length){RP.chartSel.compnt=undefined;applyChartFilters();return;}
+      const label=pS[els[0].index][0];
+      RP.chartSel.compnt=RP.chartSel.compnt===label?undefined:label;
+      applyChartFilters();highlightChart('rpProd','compnt');
+    }}});
+}
+
+function buildParetoChart(cid,iid,grp,mode,onClickFn){
+  const s=Object.entries(grp).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const tot=s.reduce((a,[,v])=>a+v,0);if(!tot)return;
+  let cum=0;const cp=s.map(([,v])=>{cum+=v;return+(cum/tot*100).toFixed(1);});
+  let n80=0,v80=0;for(const[,v]of s){n80++;v80+=v;if(v80/tot>=0.8)break;}
+  const el=document.getElementById(iid);
+  if(el){el.style.display='block';el.textContent='';
+    const strong=document.createElement('strong');strong.textContent=`${n80} สาเหตุแรก`;el.appendChild(strong);
+    el.appendChild(document.createTextNode(` คิดเป็น 80% ของ${mode==='count'?'จำนวนครั้ง':'มูลค่า'}ทั้งหมด (${mode==='count'?s[0][1]+' ครั้ง':fB(s[0][1])} — ${s[0][0]})`));
+  }
+  const origColors=s.map(()=>'#3B82F6');
+  dc(cid);
+  CHS[cid]=new Chart(document.getElementById(cid),{type:'bar',data:{
+    labels:s.map(([k])=>k.length>14?k.slice(0,13)+'…':k),
+    datasets:[
+      {label:mode==='count'?'จำนวนครั้ง':'มูลค่า (THB)',data:s.map(([,v])=>v),backgroundColor:[...origColors],borderRadius:3,yAxisID:'y',_origColors:[...origColors]},
+      {label:'Cumulative %',data:cp,type:'line',borderColor:'#F59E0B',backgroundColor:'rgba(245,158,11,.1)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#F59E0B',fill:false,yAxisID:'y2',tension:.1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:9},boxWidth:10,usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>c.datasetIndex===0?(mode==='count'?` ${f(c.parsed.y)} ครั้ง`:` ${fB(c.parsed.y)} ฿`):` ${c.parsed.y}%`}}},
+      scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},
+        y:{position:'left',ticks:{callback:v=>mode==='count'?f(v):fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+        y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#F59E0B'},grid:{display:false}}},
+      onClick:function(evt,els){
+        if(!els||!els.length)return;
+        const label=s[els[0].index][0];
+        onClickFn(label);
+      }}});
+}
+
+function buildTDS(k,n){
+  return (TL[k]||[]).filter(l=>l.show!==false).map(ln=>({
+    label:ln.name,data:Array(n).fill(ln.val),type:'line',
+    borderColor:ln.color,borderWidth:1.5,
+    borderDash:ln.dash==='dashed'?[6,4]:ln.dash==='dotted'?[2,3]:[],
+    pointRadius:0,fill:false,tension:ln.curve==='smooth'?.35:0,
+    stepped:ln.curve==='step',yAxisID:'y',order:0,
+  }));
+}
+
+function moOpts(){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:9},boxWidth:10,usePointStyle:true}},
+      tooltip:{callbacks:{label:c=>c.dataset.type==='line'?` ${c.dataset.label}: ${fB(c.parsed.y)} ฿`:` ${fB(c.parsed.y)} ฿`}},
+      },
+    scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}},
+    animation:{onComplete(ctx){lblV(ctx.chart);}}};
+}
+function hOpts(){
+  return{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.parsed.x)} ฿`}}},
+    scales:{x:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}},
+    animation:{onComplete(ctx){lblH(ctx.chart);}}};
+}
+function lblV(ch){const c=ch.ctx;c.save();c.font='bold 8px IBM Plex Mono';c.textAlign='center';c.fillStyle='#555';(ch.data.datasets[0]?.data||[]).forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm?.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x,b.y-5);}});c.restore();}
+function lblH(ch){const c=ch.ctx;c.save();c.font='8px IBM Plex Mono';c.fillStyle='#555';c.textAlign='left';(ch.data.datasets[0]?.data||[]).forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm?.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x+4,b.y+4);}});c.restore();}
+
+// ══════════════════════════════════════
+// TARGET ACCORDION
+// ══════════════════════════════════════
+function buildTLAcc(k){
+  const lines=TL[k]||[];const cnt=lines.filter(l=>l.show!==false).length;
+  const div=mkEl('div','acc');div.id=`acc-${k}`;
+  div.innerHTML=`
+    <div class="acc-hdr" onclick="togAcc('${k}')">
+      <span style="font-size:13px">🎯</span>
+      <div class="acc-t">Target Lines</div>
+      <div class="acc-sub">${cnt} เส้นใช้งาน — คลิกเพื่อแก้ไข</div>
+      <span class="acc-arr" id="acc-arr-${k}">▼</span>
+    </div>
+    <div class="acc-body" id="acc-body-${k}">
+      <div class="tl-hint">แก้ไขชั่วคราว (localStorage) หรือตั้งถาวรใน Google Sheets (Sheet: <code>Config</code>) แล้วกด Reload Target Lines</div>
+      <div class="tl-list" id="tl-list-${k}"></div>
+      <button class="add-tl" onclick="addTL('${k}')">+ เพิ่มเส้น Target</button>
+    </div>`;
+  renderTLList(k,div.querySelector(`#tl-list-${k}`),lines);
+  return div;
+}
+function togAcc(k){const b=document.getElementById(`acc-body-${k}`),a=document.getElementById(`acc-arr-${k}`);const o=b.classList.toggle('open');a.classList.toggle('open',o);}
+function renderTLList(k,con,lines){
+  con.innerHTML='';
+  lines.forEach((ln,i)=>{
+    const row=mkEl('div','tl-row');
+    const dOpts=['solid','dashed','dotted'].map(v=>`<option value="${v}"${ln.dash===v?' selected':''}>${{solid:'— ทึบ',dashed:'- - ปะ',dotted:'·· จุด'}[v]}</option>`).join('');
+    const cOpts=['step','straight','smooth'].map(v=>`<option value="${v}"${ln.curve===v?' selected':''}>${{step:'⌐ Step',straight:'/ ตรง',smooth:'~ โค้ง'}[v]}</option>`).join('');
+    row.innerHTML=`
+      <div class="tl-swatch" style="background:${ln.color}"></div>
+      <input type="color" class="tcp" value="${ln.color}" oninput="uTL('${k}',${i},'color',this.value)">
+      <input class="ti ti-name" value="${escH(ln.name)}" placeholder="ชื่อ" oninput="uTL('${k}',${i},'name',this.value)">
+      <input type="number" class="ti ti-val" value="${ln.val}" min="0" step="10000" oninput="uTL('${k}',${i},'val',parseFloat(this.value)||0)">
+      <select class="tl-sel" onchange="uTL('${k}',${i},'dash',this.value)">${dOpts}</select>
+      <select class="tl-sel" onchange="uTL('${k}',${i},'curve',this.value)">${cOpts}</select>
+      <label class="tl-chk"><input type="checkbox" ${ln.show!==false?'checked':''} onchange="uTL('${k}',${i},'show',this.checked)"> แสดง</label>
+      <button class="btn btn-ghost" style="font-size:10px;padding:3px 8px;color:var(--red);border-color:var(--red)" onclick="rmTL('${k}',${i})">✕</button>`;
+    con.appendChild(row);
+  });
+}
+function uTL(k,i,f2,v){TL[k][i][f2]=v;saveTL(k);const sw=document.getElementById(`acc-${k}`)?.querySelector(`.tl-list .tl-row:nth-child(${i+1}) .tl-swatch`);if(sw&&f2==='color')sw.style.background=v;rebuildMo(k);}
+function addTL(k){const pal=['#DC2626','#3B82F6','#16A34A','#D97706','#7C3AED','#0891B2'];TL[k].push({id:Date.now(),name:`เส้น ${TL[k].length+1}`,val:300000,color:pal[TL[k].length%pal.length],dash:'dashed',curve:'step',show:true});saveTL(k);const acc=document.getElementById(`acc-${k}`);if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);rebuildMo(k);}
+function rmTL(k,i){TL[k].splice(i,1);saveTL(k);const acc=document.getElementById(`acc-${k}`);if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);rebuildMo(k);}
+function saveTL(k){localStorage.setItem(`tl_${k}`,JSON.stringify(TL[k]));}
+function rebuildMo(k){
+  const d=k==='rp'?RP.fil:AP.fil;if(!d.length)return;
+  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const key=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[key]=(mo[key]||0)+r.val;}});
+  const mK=Object.keys(mo).sort(),mV=mK.map(key=>mo[key]);
+  const mL=mK.map(key=>{const[y,m]=key.split('-');return`${MN_EN[parseInt(m)]}'${y.slice(2)}`;});
+  const tds=buildTDS(k,mK.length);
+  const cid=k==='rp'?'rpMo':'apMo';const ck=k==='rp'?'rpM':'apM';
+  dc(ck);
+  CHS[ck]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:mL,datasets:[{label:'Value (THB)',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#3B82F6';}),borderRadius:3,order:2},...tds]},options:moOpts()});
+}
+
+// ══════════════════════════════════════
 // ADD PAPER
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function initAP(){
   document.getElementById('ap-nodata').style.display='none';
   document.getElementById('ap-setup').style.display='none';
   document.getElementById('ap-live').style.display='';
-  const src=document.getElementById('ap-src');
-  src.innerHTML=AP.src?.type==='gs'?`<span style="color:var(--green);font-size:10px">GS: ${AP.src.sheet}</span>`:`<span style="color:var(--blue);font-size:10px">${AP.src?.name||'Excel'}</span>`;
-  const ts=document.getElementById('ap-ts');if(ts&&AP.ts)ts.textContent=AP.ts.toLocaleTimeString('th-TH');
-  buildSelAP();apF();updStatus();
+  updStatus();buildSelAP();apF();
 }
 function buildSelAP(){
-  fSel('ap-fy',[...new Set(AP.all.map(r=>r.yr).filter(Boolean))].sort(),'ทุกปี');
-  fSel('ap-fm',[...new Set(AP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b),'ทุกเดือน',m=>MN[m]);
-  fSel('ap-fd',[...new Set(AP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort(),'ทุกแผนก');
-  fSel('ap-ff',[...new Set(AP.all.map(r=>r.facc||r.fac).filter(f=>f&&f!=='OTHER'))].sort(),'ทุกโรงงาน');
+  fSel('ap-fy',[...new Set(AP.all.map(r=>r.yr).filter(Boolean))].sort(),'All Years');
+  fSel('ap-fm',[...new Set(AP.all.map(r=>r.mo).filter(Boolean))].sort((a,b)=>a-b),'All Months',m=>MN_EN[m]);
+  fSel('ap-fd',[...new Set(AP.all.map(r=>r.dept).filter(d=>d&&d!=='OTHER'))].sort(),'All Depts');
+  fSel('ap-ff',[...new Set(AP.all.map(r=>r.facc).filter(f=>f&&f!=='OTHER'))].sort(),'All Factories');
 }
 function apF(){
   const y=document.getElementById('ap-fy').value,m=document.getElementById('ap-fm').value;
   const fd=document.getElementById('ap-fd').value,ff=document.getElementById('ap-ff').value;
-  AP.fil=AP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(fd&&r.dept!==fd)return false;if(ff&&(r.facc||r.fac)!==ff)return false;return true;});
-  AP.pg=0;AP.q='';
-  apChips();renderAPAll();
+  AP.fil=AP.all.filter(r=>{if(y&&String(r.yr)!==y)return false;if(m&&String(r.mo)!==m)return false;if(fd&&r.dept!==fd)return false;if(ff&&r.facc!==ff)return false;return true;});
+  AP.pg=0;AP.q='';renderAPAll();
 }
 function apRst(){['ap-fy','ap-fm','ap-fd','ap-ff'].forEach(id=>document.getElementById(id).value='');apF();}
-function apChips(){
-  const vals={y:document.getElementById('ap-fy').value,m:document.getElementById('ap-fm').value,fd:document.getElementById('ap-fd').value,ff:document.getElementById('ap-ff').value};
-  const chips=[];
-  if(vals.y)chips.push([`ปี ${vals.y}`,"document.getElementById('ap-fy').value='';apF()"]);
-  if(vals.m)chips.push([MN[parseInt(vals.m)],"document.getElementById('ap-fm').value='';apF()"]);
-  if(vals.fd)chips.push([vals.fd,"document.getElementById('ap-fd').value='';apF()"]);
-  if(vals.ff)chips.push([vals.ff,"document.getElementById('ap-ff').value='';apF()"]);
-  document.getElementById('ap-chips').innerHTML=chips.map(([l,fn])=>`<span class="chip">${l}<span class="chip-x" onclick="${fn}">×</span></span>`).join('');
-}
 
 function renderAPAll(){
   const con=document.getElementById('ap-content');
@@ -922,61 +1126,55 @@ function renderAPAll(){
   if(!d.length){con.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">ไม่พบข้อมูล</div><div class="empty-s">ลองเปลี่ยน filter</div></div>';return;}
   con.innerHTML='';
 
-  const tlines=TL.ap.filter(l=>l.show!==false);
-  const firstTgt=tlines[0]?.val||0;
-  const tv=d.reduce((a,r)=>a+r.val,0);
-  const tSh=d.reduce((a,r)=>a+r.sh,0);
-  const ni=d.filter(r=>r.check===0);
-  const h5k=d.filter(r=>r.val>=5000);
+  const tv=d.reduce((a,r)=>a+r.val,0);const tSh=d.reduce((a,r)=>a+r.sh,0);
+  const ni=d.filter(r=>r.check===0);const h5k=d.filter(r=>r.val>=5000);
   const mos=[...new Set(d.filter(r=>r.yr&&r.mo).map(r=>`${r.yr}-${r.mo}`))];
   const avg=mos.length?tv/mos.length:tv;
+  const tlines=TL.ap.filter(l=>l.show!==false);const firstTgt=tlines[0]?.val||0;
   const pct=firstTgt?avg/firstTgt*100:null;
   const dG={};d.forEach(r=>{if(r.dept)dG[r.dept]=(dG[r.dept]||0)+r.val;});
   const topD=Object.entries(dG).sort((a,b)=>b[1]-a[1])[0];
 
+  secHdr(con,'1','ภาพรวม Add Paper');
   const kDiv=mkEl('div','kpi-row');
-  const KCOLORS2=['#2563EB','#EA580C','#7C3AED','#16A34A','#DC2626','#991B1B'];
-  kDiv.innerHTML=[
-    {l:'Total Value (THB)',v:fB(tv)+' THB',s:`avg ${fB(avg)} THB/เดือน`,badge:pct!==null?(pct<=100?`✓ ${(100-pct).toFixed(1)}% ต่ำกว่าเป้า`:`⚠ ${(pct-100).toFixed(1)}% เกินเป้า`):'',bc:pct!==null?(pct<=100?'ok':'ng'):''},
-    {l:'Target All (THB)',v:fB(firstTgt)+' THB',s:'เป้าหมายรวม'},
-    {l:'จำนวนแผ่นรวม',v:f(tSh)+' แผ่น',s:`avg ${f(d.length?Math.round(tSh/d.length):0)} แผ่น/job`},
-    {l:'Total Jobs',v:f(d.length),s:`เฉลี่ย ${fB(tv/d.length||0)} THB/งาน`},
-    {l:'Jobs > 5,000 THB',v:f(h5k.length),s:`มูลค่ารวม: ${fB(h5k.reduce((a,r)=>a+r.val,0))} THB`,badge:d.length?`${(h5k.length/d.length*100).toFixed(1)}%`:'',bc:'ng'},
-    {l:'รายการใหม่ (Check=0)',v:f(ni.length),s:`มูลค่ารวม: ${fB(ni.reduce((a,r)=>a+r.val,0))} THB`,badge:ni.length?'รอประชุม':'ครบ',bc:ni.length?'ng':'ok'},
-  ].map((k,i)=>`<div class="kpi" style="--kc:${KCOLORS2[i]}"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s||''}</div>${k.badge?`<span class="kpi-b ${k.bc}">${k.badge}</span>`:''}</div>`).join('');
+  kDiv.innerHTML=`
+    <div class="kpi kpi-purple"><div class="kpi-l">Total Value (THB)</div><div class="kpi-v">${fB(tv)}</div><div class="kpi-s">avg ${fB(avg)}/เดือน</div>${pct!==null?`<span class="kpi-b ${pct>100?'b-ng':'b-ok'}">${pct>100?'▲':''} ${Math.abs(100-pct).toFixed(1)}% ${pct>100?'เกินเป้า':'ต่ำกว่าเป้า'}</span>`:''}</div>
+    <div class="kpi kpi-blue"><div class="kpi-l">จำนวนแผ่นรวม</div><div class="kpi-v">${fB(tSh)}</div><div class="kpi-s">avg ${f(d.length?Math.round(tSh/d.length):0)} แผ่น/job</div></div>
+    <div class="kpi kpi-teal"><div class="kpi-l">Total Jobs</div><div class="kpi-v">${f(d.length)}</div><div class="kpi-s">avg ${fB(tv/d.length||0)} ฿/งาน</div></div>
+    <div class="kpi kpi-red"><div class="kpi-l">Jobs > 5,000 THB</div><div class="kpi-v">${f(h5k.length)}</div><div class="kpi-s">${fB(h5k.reduce((a,r)=>a+r.val,0))} ฿</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-l">ยังไม่คุยที่ประชุม</div><div class="kpi-v">${f(ni.length)}</div><div class="kpi-s">${fB(ni.reduce((a,r)=>a+r.val,0))} ฿</div>${ni.length?'<span class="kpi-b b-warn">รอประชุม</span>':'<span class="kpi-b b-ok">ครบ</span>'}</div>
+    <div class="kpi kpi-green"><div class="kpi-l">แผนกสูงสุด</div><div class="kpi-v" style="font-size:16px">${topD?topD[0]:'—'}</div><div class="kpi-s">${topD?fB(topD[1])+' ฿':''}</div></div>`;
   con.appendChild(kDiv);
 
-  con.appendChild(buildTLAccordion('ap'));
+  con.appendChild(buildTLAcc('ap'));
 
-  sh(con,'Monthly Value & Dept');
-  const r1=mkEl('div','g2');con.appendChild(r1);
-  r1.appendChild(mkCd('📅 Monthly Value (฿)','','<div style="height:240px"><canvas id="apMo"></canvas></div>'));
-  r1.appendChild(mkCd('🏢 มูลค่าตาม Department','','<div style="height:240px"><canvas id="apDept"></canvas></div>'));
-
-  sh(con,'Pareto Analysis');
+  secHdr(con,'2','Monthly & Department');
   const r2=mkEl('div','g2');con.appendChild(r2);
-  r2.appendChild(mkCd('⚠ Pareto — สาเหตุ vs มูลค่า','',`<div id="ap-pi1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP1"></canvas></div>`));
-  r2.appendChild(mkCd('🔢 Pareto — สาเหตุ vs ครั้ง','',`<div id="ap-pi2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP2"></canvas></div>`));
+  r2.appendChild(mkCard2('📅','Monthly Value (THB)',null,'<div style="height:240px"><canvas id="apMo"></canvas></div>'));
+  r2.appendChild(mkCard2('🏢','Department Value',null,'<div style="height:240px"><canvas id="apDept"></canvas></div>'));
 
-  sh(con,'Product Ranking');
-  const prC=mkCdB('📦 Top 15 Products','','ap-pb','<div style="height:300px"><canvas id="apProd"></canvas></div>');con.appendChild(prC);
+  secHdr(con,'3','Pareto Analysis');
+  const r3=mkEl('div','g2');con.appendChild(r3);
+  r3.appendChild(mkCard2('📊','Pareto — สาเหตุ vs มูลค่า',null,'<div id="ap-ins1" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP1"></canvas></div>'));
+  r3.appendChild(mkCard2('📊','Pareto — สาเหตุ vs ครั้ง',null,'<div id="ap-ins2" class="insight" style="display:none"></div><div style="height:260px"><canvas id="apP2"></canvas></div>'));
 
-  sh(con,'รายละเอียด',`${d.length.toLocaleString()} รายการ`,'ap-tsub');
-  const tC=mkEl('div','card');
-  tC.innerHTML=`
-    <div class="sbar"><input type="text" class="si" id="ap-si2" placeholder="ค้นหา JO, Code, สาเหตุ, แผนก..." oninput="apSrch()"><div class="sct" id="ap-sc"></div></div>
-    <div class="tscroll"><table>
+  secHdr(con,'4','รายละเอียด');
+  const tCard=mkEl('div','card');
+  tCard.innerHTML=`
+    <div class="card-h"><div class="card-icon">📋</div><div class="card-t">รายละเอียดทั้งหมด</div><div class="card-badge" id="ap-tsub">${d.length.toLocaleString()} rows</div></div>
+    <div class="sbar"><input type="text" class="si" id="ap-si" placeholder="ค้นหาในตาราง..." oninput="apSrch()"><div class="sct" id="ap-sc"></div></div>
+    <div class="tbl-scroll"><table>
       <thead><tr>
         <th onclick="apSort('jo')">JO</th><th onclick="apSort('code')">Code</th>
-        <th onclick="apSort('cause')">สาเหตุ</th><th onclick="apSort('dept')">Dept</th>
-        <th onclick="apSort('facc')">Factory</th><th onclick="apSort('mo')">เดือน</th>
-        <th onclick="apSort('val')" class="sd">มูลค่า (฿)</th><th>สถานะ</th>
+        <th onclick="apSort('cause')">Cause</th><th onclick="apSort('dept')">Dept</th>
+        <th onclick="apSort('facc')">Factory</th><th onclick="apSort('mo')">Month</th>
+        <th onclick="apSort('val')" class="sd">Value (THB) ↓</th><th>Status</th>
       </tr></thead>
       <tbody id="ap-tb"></tbody>
       <tfoot><tr id="ap-tf"></tr></tfoot>
     </table></div>
     <div class="pgn" id="ap-pg"></div>`;
-  con.appendChild(tC);
+  con.appendChild(tCard);
 
   requestAnimationFrame(()=>{buildAPCharts(d);apTbl();});
 }
@@ -984,312 +1182,84 @@ function renderAPAll(){
 function buildAPCharts(d){
   const mo={};d.forEach(r=>{if(r.yr&&r.mo){const k=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[k]=(mo[k]||0)+r.val;}});
   const mK=Object.keys(mo).sort(),mV=mK.map(k=>mo[k]);
-  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
+  const mL=mK.map(k=>{const[y,m]=k.split('-');return`${MN_EN[parseInt(m)]}'${y.slice(2)}`;});
   const tds=buildTDS('ap',mK.length);
   dc('apM');
-  CHS['apM']=new Chart(document.getElementById('apMo'),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#7C3AED';}),borderRadius:4,order:2},...tds]},options:moOpts()});
+  CHS['apM']=new Chart(document.getElementById('apMo'),{type:'bar',data:{labels:mL,datasets:[{label:'Value (THB)',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':'#7C3AED';}),borderRadius:3,order:2},...tds]},options:moOpts()});
 
   const dG={};d.forEach(r=>{if(r.dept)dG[r.dept]=(dG[r.dept]||0)+r.val;});
   const dS=Object.entries(dG).sort((a,b)=>b[1]-a[1]);
   dc('apDept');
-  const apDeptPlug = makeClickPlugin('apDept', lbl => {
-    const el = document.getElementById('ap-fd'); if(!el) return;
-    el.value = lbl || ''; apF();
-  });
-  CHS['apDept']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:dS.map(()=>'#7C3AED'),_baseColor:'#7C3AED',borderRadius:3}]},options:hOpts(apDeptPlug)});
+  CHS['apDept']=new Chart(document.getElementById('apDept'),{type:'bar',data:{labels:dS.map(x=>x[0]),datasets:[{data:dS.map(x=>x[1]),backgroundColor:'#7C3AED',borderRadius:3}]},options:hOpts()});
 
   const cG={};d.forEach(r=>{if(r.cause){const k=r.cause.toLowerCase().replace(/\s+/g,' ');cG[k]=(cG[k]||0)+r.val;}});
-  buildPareto('apP1','ap-pi1',cG);
+  buildParetoChart('apP1','ap-ins1',cG,'value',()=>{});
   const cc={};d.forEach(r=>{if(r.cause){const k=r.cause.toLowerCase().replace(/\s+/g,' ');cc[k]=(cc[k]||0)+1;}});
-  buildPareto('apP2','ap-pi2',cc);
-
-  const pG={};d.forEach(r=>{if(r.code)pG[r.code]=(pG[r.code]||0)+r.val;});
-  const pS=Object.entries(pG).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const pb=document.getElementById('ap-pb');if(pb)pb.textContent=`Top ${pS.length}`;
-  dc('apProd');
-  const apProdPlug = makeClickPlugin('apProd', lbl => {
-    const si = document.getElementById('ap-si2'); if(!si) return;
-    if(lbl){ si.value = lbl.replace('…',''); } else { si.value=''; }
-    apSrch();
-  });
-  CHS['apProd']=new Chart(document.getElementById('apProd'),{type:'bar',data:{labels:pS.map(x=>x[0].length>28?x[0].slice(0,27)+'…':x[0]),datasets:[{data:pS.map(x=>x[1]),backgroundColor:pS.map(()=>'#6D28D9'),_baseColor:'#6D28D9',borderRadius:3}]},options:{...hOpts(apProdPlug),layout:{padding:{right:60}}}});
+  buildParetoChart('apP2','ap-ins2',cc,'count',()=>{});
 }
 
-// ═══════════════════════════════════════
-// TARGET LINES ACCORDION
-// ═══════════════════════════════════════
-function buildTLAccordion(k){
-  const lines=TL[k]||[];
-  const cnt=lines.filter(l=>l.show!==false).length;
-  const div=document.createElement('div');
-  div.className='acc';div.id=`acc-tl-${k}`;
-  div.innerHTML=`
-    <div class="acc-hdr" onclick="toggleAcc('${k}')">
-      <span style="font-size:14px">🎯</span>
-      <div class="acc-hdr-t">Target Lines</div>
-      <div class="acc-hdr-s">${cnt > 0 ? cnt+' เส้นใช้งาน' : 'ไม่มีเส้น'}</div>
-      <span class="acc-arrow" id="acc-arr-${k}">▼</span>
-    </div>
-    <div class="acc-body" id="acc-body-${k}">
-      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">
-        Target Lines จัดการใน Google Sheets (Sheet: <strong>Config</strong>) — กด "Reload Target Lines" ในหน้าตั้งค่าหลังแก้ไข<br>
-        หรือแก้ไขชั่วคราวด้านล่าง (เก็บใน localStorage เครื่องนี้เท่านั้น)
-      </div>
-      <div class="tl-list" id="tl-list-${k}"></div>
-      <button class="add-tl" onclick="addTL('${k}')">+ เพิ่มเส้น</button>
-    </div>`;
-  renderTLList(k, div.querySelector(`#tl-list-${k}`), lines);
-  return div;
-}
-
-function toggleAcc(k){
-  const body=document.getElementById(`acc-body-${k}`);
-  const arr=document.getElementById(`acc-arr-${k}`);
-  const open=body.classList.toggle('open');
-  arr.classList.toggle('open',open);
-}
-
-function renderTLList(k,con,lines){
-  con.innerHTML='';
-  lines.forEach((ln,i)=>{
-    const row=document.createElement('div');row.className='tl-row';
-    const dashOpts=['solid','dashed','dotted'].map(v=>`<option value="${v}"${ln.dash===v?' selected':''}>${{solid:'— ทึบ',dashed:'- - ปะ',dotted:'··· จุด'}[v]}</option>`).join('');
-    const crvOpts=['step','straight','smooth'].map(v=>`<option value="${v}"${ln.curve===v?' selected':''}>${{step:'⌐ step',straight:'/ ตรง',smooth:'~ โค้ง'}[v]}</option>`).join('');
-    row.innerHTML=`
-      <div class="tl-color" style="background:${ln.color}"></div>
-      <input type="color" class="tl-cp" value="${ln.color}" oninput="updTL('${k}',${i},'color',this.value)">
-      <input class="ti ti-name" value="${escH(ln.name)}" placeholder="ชื่อ" oninput="updTL('${k}',${i},'name',this.value)">
-      <input type="number" class="ti ti-val" value="${ln.val}" min="0" step="10000" oninput="updTL('${k}',${i},'val',parseFloat(this.value)||0)">
-      <select class="tl-sel" onchange="updTL('${k}',${i},'dash',this.value)">${dashOpts}</select>
-      <select class="tl-sel" onchange="updTL('${k}',${i},'curve',this.value)">${crvOpts}</select>
-      <label class="tl-chk"><input type="checkbox" ${ln.show!==false?'checked':''} onchange="updTL('${k}',${i},'show',this.checked)"> แสดง</label>
-      <button class="btn btn-danger btn-sm" onclick="rmTL('${k}',${i})">✕</button>`;
-    con.appendChild(row);
-  });
-}
-
-function updTL(k,i,field,val){
-  TL[k][i][field]=val;saveTL(k);
-  // update color swatch
-  const con=document.getElementById(`tl-list-${k}`);
-  if(field==='color'&&con){const swatch=con.children[i]?.querySelector('.tl-color');if(swatch)swatch.style.background=val;}
-  rebuildMoChart(k);
-}
-function addTL(k){
-  const pal=['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#0891B2'];
-  TL[k].push({id:Date.now(),name:`เส้น ${TL[k].length+1}`,val:300000,color:pal[TL[k].length%pal.length],dash:'dashed',curve:'step',show:true});
-  saveTL(k);
-  const acc=document.getElementById(`acc-tl-${k}`);
-  if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);
-  rebuildMoChart(k);
-}
-function rmTL(k,i){
-  TL[k].splice(i,1);saveTL(k);
-  const acc=document.getElementById(`acc-tl-${k}`);
-  if(acc)renderTLList(k,acc.querySelector(`#tl-list-${k}`),TL[k]);
-  rebuildMoChart(k);
-}
-
-function rebuildMoChart(k){
-  const d=k==='rp'?RP.fil:AP.fil;if(!d.length)return;
-  const mo={};d.forEach(r=>{if(r.yr&&r.mo){const key=`${r.yr}-${String(r.mo).padStart(2,'0')}`;mo[key]=(mo[key]||0)+r.val;}});
-  const mK=Object.keys(mo).sort(),mV=mK.map(key=>mo[key]);
-  const mL=mK.map(key=>{const[y,m]=key.split('-');return`${MN[parseInt(m)]}'${y.slice(2)}`;});
-  const tds=buildTDS(k,mK.length);
-  const cid=k==='rp'?'rpMo':'apMo';const ck=k==='rp'?'rpM':'apM';const bc=k==='rp'?'#2563EB':'#7C3AED';
-  dc(ck);
-  CHS[ck]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:mL,datasets:[{label:'฿',data:mV,backgroundColor:mV.map(v=>{const ov=tds.filter(l=>v>l.data[0]);return ov.length?'#DC2626':bc;}),borderRadius:4,order:2},...tds]},options:moOpts()});
-}
-
-// ═══════════════════════════════════════
-// CHART CLICK FILTER STATE
-// ═══════════════════════════════════════
-const CHART_SEL = {}; // chartId -> selectedLabel or null
-
-function chartClick(chartId, label, filterFn) {
-  // toggle selection
-  if (CHART_SEL[chartId] === label) {
-    CHART_SEL[chartId] = null;
-    filterFn(null);
-  } else {
-    CHART_SEL[chartId] = label;
-    filterFn(label);
-  }
-}
-
-// Apply fade: selected bar full opacity, others 0.25
-function applyChartFade(chart, selectedIdx) {
-  const ds = chart.data.datasets[0];
-  const n = ds.data.length;
-  if (selectedIdx === null || selectedIdx === undefined) {
-    // reset all to full
-    ds.backgroundColor = Array(n).fill(ds._baseColor || ds.backgroundColor[0] || '#2563EB');
-  } else {
-    const base = ds._baseColor || ds.backgroundColor[0] || '#2563EB';
-    ds._baseColor = base;
-    ds.backgroundColor = ds.data.map((_, i) => i === selectedIdx ? base : hexFade(base, 0.22));
-  }
-  chart.update('none');
-}
-
-function hexFade(color, alpha) {
-  // Convert hex to rgba with alpha
-  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-function makeClickPlugin(chartId, filterFn) {
-  return {
-    id: 'clickFilter_'+chartId,
-    afterEvent(chart, args) {
-      if (args.event.type !== 'click') return;
-      const pts = chart.getElementsAtEventForMode(args.event.native, 'nearest', {intersect:true}, true);
-      if (!pts.length) {
-        // click outside — reset
-        CHART_SEL[chartId] = null;
-        applyChartFade(chart, null);
-        filterFn(null);
-        return;
-      }
-      const idx = pts[0].index;
-      const label = chart.data.labels[idx];
-      const prev = CHART_SEL[chartId];
-      if (prev === label) {
-        CHART_SEL[chartId] = null;
-        applyChartFade(chart, null);
-        filterFn(null);
-      } else {
-        CHART_SEL[chartId] = label;
-        applyChartFade(chart, idx);
-        filterFn(label);
-      }
-    }
-  };
-}
-
-// ═══════════════════════════════════════
-// CHART HELPERS
-// ═══════════════════════════════════════
-function buildTDS(k,n){
-  return (TL[k]||[]).filter(l=>l.show!==false).map(ln=>({
-    label:ln.name,data:Array(n).fill(ln.val),type:'line',
-    borderColor:ln.color,borderWidth:1.5,
-    borderDash:ln.dash==='dashed'?[7,4]:ln.dash==='dotted'?[2,3]:[],
-    pointRadius:0,fill:false,
-    tension:ln.curve==='smooth'?.35:0,
-    stepped:ln.curve==='step'?true:false,
-    yAxisID:'y',order:0,
-  }));
-}
-function moOpts(){
-  return{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{font:{size:9},boxWidth:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?` ${c.dataset.label}: ${fB(c.parsed.y)} THB`:` ${fB(c.parsed.y)} THB`}}},
-    scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}}},
-    animation:{onComplete(ctx){lblV(ctx.chart);}}};
-}
-function hOpts(clickPlugin){
-  const plugins = {legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.parsed.x)} THB`}}};
-  if(clickPlugin) plugins[clickPlugin.id] = clickPlugin;
-  return{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins,
-    scales:{x:{ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:{size:10}},grid:{display:false}}},
-    onHover(e,els){e.native.target.style.cursor=els.length?'pointer':'default';},
-    animation:{onComplete(ctx){lblH(ctx.chart);}}};
-}
-function lblV(ch){const c=ch.ctx;c.save();c.font='bold 8px IBM Plex Mono';c.textAlign='center';c.fillStyle='#555';ch.data.datasets[0]?.data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x,b.y-5);}});c.restore();}
-function lblH(ch){const c=ch.ctx;c.save();c.font='8px IBM Plex Mono';c.fillStyle='#555';c.textAlign='left';ch.data.datasets[0]?.data.forEach((v,i)=>{const mm=ch.getDatasetMeta(0);if(mm.data[i]){const b=mm.data[i].getProps(['x','y'],true);c.fillText(fB(v),b.x+4,b.y+4);}});c.restore();}
-function buildPareto(cid,iid,grp){
-  const s=Object.entries(grp).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const tot=s.reduce((a,[,v])=>a+v,0);if(!tot)return;
-  let cum=0;const cp=s.map(([,v])=>{cum+=v;return+(cum/tot*100).toFixed(1);});
-  let n80=0,v80=0;for(const[,v]of s){n80++;v80+=v;if(v80/tot>=0.8)break;}
-  const el=document.getElementById(iid);
-  if(el){el.style.display='block';el.innerHTML=`${n80} รายการแรกคิดเป็น <strong>${Math.round(v80/tot*100)}%</strong> ของทั้งหมด${s[0]?` — "${s[0][0]}" สูงสุด <strong>${fB(s[0][1])}</strong>`:''}`;};
-  dc(cid);
-  const parPlug = makeClickPlugin(cid, lbl => {
-    if(!lbl) return;
-    // detect which tab and filter accordingly
-    if(cid.startsWith('rp')) {
-      if(cid==='rpP1') { const e=document.getElementById('rp-fpb'); if(e){ e.value=lbl.replace('…',''); rpF(); } }
-      else if(cid==='rpP2') { const e=document.getElementById('rp-fmc'); if(e){ e.value=lbl.replace('…',''); rpF(); } }
-    } else {
-      const si=document.getElementById('ap-si2'); if(si){ si.value=lbl.replace('…',''); apSrch(); }
-    }
-    if(!lbl) { if(cid.startsWith('rp')){if(cid==='rpP1'){const e=document.getElementById('rp-fpb');if(e){e.value='';rpF();}}else{const e=document.getElementById('rp-fmc');if(e){e.value='';rpF();}}}else{const si=document.getElementById('ap-si2');if(si){si.value='';apSrch();}}}
-  });
-  CHS[cid]=new Chart(document.getElementById(cid),{type:'bar',data:{labels:s.map(([k])=>k.length>16?k.slice(0,15)+'…':k),datasets:[{label:'มูลค่า',data:s.map(([,v])=>v),backgroundColor:s.map(()=>'#2563EB'),_baseColor:'#2563EB',borderRadius:3,yAxisID:'y'},{label:'%สะสม',data:cp,type:'line',borderColor:'#DC2626',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#DC2626',fill:false,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}},[parPlug.id]:parPlug,tooltip:{callbacks:{label:c=>c.datasetIndex===0?` ${f(c.parsed.y)} THB`:` ${c.parsed.y}%`}}},onHover(e,els){e.native.target.style.cursor=els.length?'pointer':'default';},scales:{x:{ticks:{font:{size:8},maxRotation:35},grid:{display:false}},y:{position:'left',ticks:{callback:v=>fB(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},y2:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9},color:'#DC2626'},grid:{display:false}}}}});
-}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // TABLES
-// ═══════════════════════════════════════
-function rpSrch(){RP.q=document.getElementById('rp-si2').value.toLowerCase();RP.pg=0;rpTbl();}
+// ══════════════════════════════════════
+function rpSrch(){RP.q=document.getElementById('rp-si').value.toLowerCase();RP.pg=0;rpTbl();}
 function rpSort(c){if(RP.srt.c===c)RP.srt.d*=-1;else{RP.srt.c=c;RP.srt.d=-1;}rpTbl();}
 function rpTbl(){
-  let data=RP.fil.filter(r=>!RP.q||[r.jo,r.compnt,r.machine,r.problem,r.dept,r.fac].join(' ').toLowerCase().includes(RP.q));
+  let data=RP.fil.filter(r=>!RP.q||[r.jo,r.compnt,r.machine,r.problem,r.dept].join(' ').toLowerCase().includes(RP.q));
   data=[...data].sort((a,b)=>{const va=a[RP.srt.c],vb=b[RP.srt.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*RP.srt.d;});
-  document.querySelectorAll('#rp-content thead th').forEach((th,i)=>{th.classList.remove('sa','sd');const ks=['jo','compnt','machine','problem','dept','fac','mo','val',''][i];if(ks===RP.srt.c)th.classList.add(RP.srt.d>0?'sa':'sd');});
+  document.querySelectorAll('#rp-content thead th').forEach((th,i)=>{th.classList.remove('sa','sd');const ks=['jo','compnt','machine','problem','dept','mo','val',''][i];if(ks===RP.srt.c)th.classList.add(RP.srt.d>0?'sa':'sd');});
   const tot=data.length,pages=Math.ceil(tot/PAGE)||1;RP.pg=Math.min(RP.pg,pages-1);
   const sl=data.slice(RP.pg*PAGE,(RP.pg+1)*PAGE);
-  const sc=document.getElementById('rp-sc');if(sc)sc.textContent=RP.q?`พบ ${tot.toLocaleString()}/${RP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
-  const sub=document.getElementById('rp-tsub');if(sub)sub.textContent=`${RP.fil.length.toLocaleString()} รายการ`;
+  const sc=document.getElementById('rp-sc');if(sc)sc.textContent=RP.q?`พบ ${tot.toLocaleString()}/${RP.fil.length.toLocaleString()}`:tot.toLocaleString()+' rows';
+  const sub=document.getElementById('rp-tsub');if(sub)sub.textContent=`${RP.fil.length.toLocaleString()} rows`;
   const tb=document.getElementById('rp-tb');if(!tb)return;
-  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rhi':''} ${r.check===0?'rno':''}">
+  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'hi':''}">
     <td class="mono">${r.jo}</td>
-    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.compnt}">${r.compnt}</td>
-    <td><strong>${r.machine}</strong></td>
-    <td>${r.problem}</td>
-    <td>${r.dept}</td><td>${r.fac}</td>
-    <td style="white-space:nowrap">${MN[r.mo]||''} ${r.yr}</td>
-    <td class="tar mono" style="color:${r.val>=5000?'var(--red)':'var(--blue)'}">${f(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
-    <td>${r.check===0?'<span class="tag tag-n">รอ</span>':'<span class="tag tag-ok">✓</span>'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.compnt}">${r.compnt}</td>
+    <td>${r.machine}</td><td>${r.problem}</td><td>${r.dept}</td>
+    <td style="white-space:nowrap">${MN_EN[r.mo]} ${r.yr}</td>
+    <td class="tar mono" style="color:var(--ink);font-weight:${r.val>=5000?700:400}">${f(r.val)}${r.val>=5000?' <span class="tag tag-high">▲ HIGH</span>':''}</td>
+    <td>${r.check===0?'<span class="tag tag-wait">รอ</span>':'<span class="tag tag-done">✓</span>'}</td>
   </tr>`).join('');
   const tv=data.reduce((a,r)=>a+r.val,0);
-  const tf=document.getElementById('rp-tf');if(tf)tf.innerHTML=`<td colspan="7">รวม ${data.length.toLocaleString()}</td><td class="tar mono">${f(tv)}</td><td></td>`;
+  const tf=document.getElementById('rp-tf');if(tf)tf.innerHTML=`<td colspan="6">${data.length.toLocaleString()} rows</td><td class="tar mono">${f(tv)}</td><td></td>`;
   pgn('rp-pg',RP.pg,pages,tot,p=>{RP.pg=p;rpTbl();});
 }
 
-function apSrch(){AP.q=document.getElementById('ap-si2').value.toLowerCase();AP.pg=0;apTbl();}
+function apSrch(){AP.q=document.getElementById('ap-si').value.toLowerCase();AP.pg=0;apTbl();}
 function apSort(c){if(AP.srt.c===c)AP.srt.d*=-1;else{AP.srt.c=c;AP.srt.d=-1;}apTbl();}
 function apTbl(){
-  let data=AP.fil.filter(r=>!AP.q||[r.jo,r.code,r.cause,r.dept,r.facc].join(' ').toLowerCase().includes(AP.q));
+  let data=AP.fil.filter(r=>!AP.q||[r.jo,r.code,r.cause,r.dept].join(' ').toLowerCase().includes(AP.q));
   data=[...data].sort((a,b)=>{const va=a[AP.srt.c],vb=b[AP.srt.c];return(typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''),'th'))*AP.srt.d;});
   const tot=data.length,pages=Math.ceil(tot/PAGE)||1;AP.pg=Math.min(AP.pg,pages-1);
   const sl=data.slice(AP.pg*PAGE,(AP.pg+1)*PAGE);
-  const sc=document.getElementById('ap-sc');if(sc)sc.textContent=AP.q?`พบ ${tot.toLocaleString()}/${AP.fil.length.toLocaleString()}`:tot.toLocaleString()+' รายการ';
-  const sub=document.getElementById('ap-tsub');if(sub)sub.textContent=`${AP.fil.length.toLocaleString()} รายการ`;
+  const sc=document.getElementById('ap-sc');if(sc)sc.textContent=AP.q?`พบ ${tot.toLocaleString()}/${AP.fil.length.toLocaleString()}`:tot.toLocaleString()+' rows';
+  const sub=document.getElementById('ap-tsub');if(sub)sub.textContent=`${AP.fil.length.toLocaleString()} rows`;
   const tb=document.getElementById('ap-tb');if(!tb)return;
-  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'rhi':''} ${r.check===0?'rno':''}">
+  tb.innerHTML=sl.map(r=>`<tr class="${r.val>=5000?'hi':''}">
     <td class="mono">${r.jo}</td>
-    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.code}">${r.code}</td>
-    <td>${r.cause}</td><td><strong>${r.dept}</strong></td><td>${r.facc||r.fac||''}</td>
-    <td style="white-space:nowrap">${MN[r.mo]||''} ${r.yr}</td>
-    <td class="tar mono" style="color:${r.val>=5000?'var(--red)':'#7C3AED'}">${f(r.val)}${r.val>=5000?'<span class="tag tag-h">HIGH</span>':''}</td>
-    <td>${r.check===0?'<span class="tag tag-n">รอ</span>':'<span class="tag tag-ok">✓</span>'}</td>
+    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.code}</td>
+    <td>${r.cause}</td><td><strong>${r.dept}</strong></td><td>${r.facc}</td>
+    <td style="white-space:nowrap">${MN_EN[r.mo]} ${r.yr}</td>
+    <td class="tar mono">${f(r.val)}${r.val>=5000?' <span class="tag tag-high">▲ HIGH</span>':''}</td>
+    <td>${r.check===0?'<span class="tag tag-wait">รอ</span>':'<span class="tag tag-done">✓</span>'}</td>
   </tr>`).join('');
   const tv=data.reduce((a,r)=>a+r.val,0);
-  const tf=document.getElementById('ap-tf');if(tf)tf.innerHTML=`<td colspan="6">รวม ${data.length.toLocaleString()}</td><td class="tar mono">${f(tv)}</td><td></td>`;
+  const tf=document.getElementById('ap-tf');if(tf)tf.innerHTML=`<td colspan="6">${data.length.toLocaleString()} rows</td><td class="tar mono">${f(tv)}</td><td></td>`;
   pgn('ap-pg',AP.pg,pages,tot,p=>{AP.pg=p;apTbl();});
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════
+// ══════════════════════════════════════
 function mkEl(t,c){const e=document.createElement(t);e.className=c;return e;}
-let _shCount = {};
-function sh(con,title,sub,subId){
-  const d=document.createElement('div');d.className='sec';
-  d.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="sec-t">${title}</div>${sub?`<div class="sec-s"${subId?` id="${subId}"`:''} >${sub}</div>`:''}</div>`;
+function secHdr(con,num,title){
+  const d=mkEl('div','sec-hdr');
+  d.innerHTML=`<div class="sec-num">${num}</div><div class="sec-title">${title}</div>`;
   con.appendChild(d);
 }
-function mkCd(title,sub,body){
-  const c=document.createElement('div');c.className='card';
-  c.innerHTML=`<div class="card-h"><div><div class="card-t">${title}</div>${sub?`<div class="card-s">${sub}</div>`:''}</div></div><div class="card-b">${body}</div>`;
-  return c;
-}
-function mkCdB(title,sub,bid,body){
-  const c=document.createElement('div');c.className='card';
-  c.innerHTML=`<div class="card-h"><div><div class="card-t">${title}</div>${sub?`<div class="card-s">${sub}</div>`:''}</div>${bid?`<span style="font-size:10px;color:var(--ink3);font-weight:600" id="${bid}">—</span>`:''}</div><div class="card-b">${body}</div>`;
+function mkCard2(icon,title,badge,body){
+  const c=mkEl('div','card');
+  c.innerHTML=`<div class="card-h"><div class="card-icon">${icon}</div><div class="card-t">${title}</div>${badge?`<div class="card-badge">${badge}</div>`:''}</div><div class="card-b">${body}</div>`;
   return c;
 }
 function pgn(id,pg,pages,tot,cb){
@@ -1299,10 +1269,10 @@ function pgn(id,pg,pages,tot,cb){
   const show=new Set([0,pg-1,pg,pg+1,pages-1].filter(x=>x>=0&&x<pages));
   let btns='',prev=-1;
   [...show].sort((a,b)=>a-b).forEach(p=>{
-    if(prev>=0&&p>prev+1)btns+=`<span style="padding:0 3px;color:var(--ink3)">…</span>`;
+    if(prev>=0&&p>prev+1)btns+=`<span style="padding:0 3px;color:var(--ink4)">…</span>`;
     btns+=`<button class="pgb${p===pg?' on':''}" onclick="(${cb.toString()})(${p})">${p+1}</button>`;prev=p;
   });
-  el.innerHTML=`<div class="pgi">${s.toLocaleString()}–${e.toLocaleString()} จาก ${tot.toLocaleString()}</div><div class="pgb-wrap"><button class="pgb" ${pg===0?'disabled':''} onclick="(${cb.toString()})(${pg-1})">‹</button>${btns}<button class="pgb" ${pg===pages-1?'disabled':''} onclick="(${cb.toString()})(${pg+1})">›</button></div>`;
+  el.innerHTML=`<div class="pgi">${s.toLocaleString()}–${e.toLocaleString()} จาก ${tot.toLocaleString()}</div><div class="pgb-w"><button class="pgb" ${pg===0?'disabled':''} onclick="(${cb.toString()})(${pg-1})">‹ prev</button>${btns}<button class="pgb" ${pg===pages-1?'disabled':''} onclick="(${cb.toString()})(${pg+1})">ถัดไป ›</button></div>`;
 }
 </script>
 </body>
